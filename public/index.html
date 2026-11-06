@@ -1451,7 +1451,10 @@
   <div id="accounts-modal" class="modal-backdrop">
     <div class="modal-card">
       <div class="modal-header">
-        <h3>Quản lý danh sách tài khoản Quản trị</h3>
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <h3 style="margin: 0;">Quản lý danh sách tài khoản Quản trị</h3>
+          <span style="font-size: 11px; background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 2px 8px; border-radius: 9999px; font-weight: 500;">🔒 Lưu riêng tư trên máy bạn</span>
+        </div>
         <button type="button" id="btn-close-modal" class="modal-close-btn">&times;</button>
       </div>
       <div class="modal-body">
@@ -1859,30 +1862,53 @@
       return str.trim();
     }
 
-    // --- QUẢN LÝ TÀI KHOẢN ---
+    // --- QUẢN LÝ TÀI KHOẢN (LƯU TRỮ CÁ NHÂN RIÊNG BIỆT TẠI LOCALSTORAGE CỦA TỪNG NGƯỜI DÙNG) ---
     async function loadAccounts() {
+      try {
+        const saved = localStorage.getItem('ytcs_saved_accounts');
+        if (saved !== null) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) {
+            accountsList = parsed;
+            renderAccountsUI();
+            return;
+          }
+        }
+      } catch (err) {
+        console.warn('Lỗi đọc tài khoản từ localStorage:', err);
+      }
+
+      // Nếu trình duyệt hiện tại chưa lưu gì, kiểm tra file dữ liệu ban đầu từ máy chủ (nếu có) và nạp vào máy người dùng
       try {
         const res = await fetch('/_mgr/accounts');
         if (res.ok) {
-          accountsList = await res.json();
-          renderAccountsUI();
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0) {
+            accountsList = list;
+            localStorage.setItem('ytcs_saved_accounts', JSON.stringify(accountsList));
+            renderAccountsUI();
+            return;
+          }
         }
       } catch (err) {
-        console.error('Lỗi tải danh sách tài khoản:', err);
+        console.warn('Không thể nạp danh sách tài khoản mặc định:', err);
       }
+
+      accountsList = [];
+      renderAccountsUI();
     }
 
-    async function saveAccountsToServer() {
+    function saveAccountsLocally() {
       try {
-        await fetch('/_mgr/accounts', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(accountsList)
-        });
-        renderAccountsUI();
+        localStorage.setItem('ytcs_saved_accounts', JSON.stringify(accountsList));
       } catch (err) {
-        console.error('Lỗi lưu danh sách tài khoản:', err);
+        console.error('Lỗi lưu danh sách tài khoản vào localStorage:', err);
       }
+      renderAccountsUI();
+    }
+
+    function saveAccountsToServer() {
+      saveAccountsLocally();
     }
 
     function updateDropdownLabel(acc) {
