@@ -449,6 +449,83 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // 1e. Proxy xem/in file PDF từ dms-hisl4.vnpt.vn (Khắc phục triệt để lỗi CORS khi in phiếu/đơn thuốc/kết quả)
+  if (pathname === '/dms-proxy' || pathname.startsWith('/dms-proxy/') || pathname.startsWith('/his4/')) {
+    setCors();
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204);
+      res.end();
+      return;
+    }
+
+    let targetPdfUrl = parsedUrl.query.target || parsedUrl.query.url;
+    if (!targetPdfUrl) {
+      if (pathname.startsWith('/dms-proxy/')) {
+        targetPdfUrl = 'https://dms-hisl4.vnpt.vn' + req.url.replace(/^\/dms-proxy/, '');
+      } else if (pathname.startsWith('/his4/')) {
+        targetPdfUrl = 'https://dms-hisl4.vnpt.vn' + req.url;
+      }
+    }
+
+    if (targetPdfUrl) {
+      if (targetPdfUrl.startsWith('/')) {
+        targetPdfUrl = 'https://dms-hisl4.vnpt.vn' + targetPdfUrl;
+      } else if (!targetPdfUrl.startsWith('http://') && !targetPdfUrl.startsWith('https://')) {
+        targetPdfUrl = 'https://dms-hisl4.vnpt.vn/' + targetPdfUrl;
+      }
+
+      try {
+        const u = new URL(targetPdfUrl);
+        const reqHeaders = {
+          'host': u.hostname,
+          'origin': 'https://' + TARGET_HOST,
+          'referer': 'https://' + TARGET_HOST + '/',
+          'user-agent': req.headers['user-agent'] || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'accept': req.headers['accept'] || '*/*'
+        };
+        if (req.headers['range']) {
+          reqHeaders['range'] = req.headers['range'];
+        }
+
+        const proxyReq = https.request({
+          hostname: u.hostname,
+          port: u.port || 443,
+          path: u.pathname + u.search,
+          method: req.method,
+          headers: reqHeaders
+        }, (proxyRes) => {
+          const respHeaders = { ...proxyRes.headers };
+          const origin = getReqOrigin();
+          respHeaders['access-control-allow-origin'] = origin;
+          respHeaders['access-control-allow-credentials'] = 'true';
+          respHeaders['access-control-allow-methods'] = 'GET, HEAD, OPTIONS';
+          respHeaders['access-control-allow-headers'] = req.headers['access-control-request-headers'] || '*';
+          respHeaders['access-control-expose-headers'] = 'Content-Length, Content-Range, Accept-Ranges, Content-Disposition, ETag';
+          respHeaders['vary'] = 'Origin';
+          respHeaders['x-frame-options'] = 'ALLOWALL';
+          delete respHeaders['content-security-policy'];
+
+          res.writeHead(proxyRes.statusCode, respHeaders);
+          proxyRes.pipe(res);
+        });
+
+        proxyReq.on('error', (err) => {
+          console.error('[DMS Proxy] Lỗi tải PDF:', err.message);
+          res.writeHead(502, { 'Content-Type': 'text/plain' });
+          res.end('Bad Gateway: ' + err.message);
+        });
+
+        req.pipe(proxyReq);
+        return;
+      } catch (err) {
+        console.error('[DMS Proxy] Lỗi phân tích URL:', err.message);
+        res.writeHead(400, { 'Content-Type': 'text/plain' });
+        res.end('Invalid target URL: ' + err.message);
+        return;
+      }
+    }
+  }
+
   // 2. Route nạp phiên làm việc độc lập cho tab/subdomain (/init-session)
   if (pathname === '/init-session') {
     const sid = parsedUrl.query.sid;
@@ -1117,6 +1194,9 @@ const server = http.createServer(async (req, res) => {
       reqHeaders['region-code'] = 'region2';
     }
     delete reqHeaders['x-client-frame-url'];
+    if (pathname.includes('/minio') || pathname.includes('getLink')) {
+      delete reqHeaders['accept-encoding'];
+    }
 
     const clientOrigin = getReqOrigin();
     const startTime = Date.now();
@@ -1152,6 +1232,41 @@ const server = http.createServer(async (req, res) => {
 
       if (respHeaders['set-cookie']) {
         respHeaders['set-cookie'] = respHeaders['set-cookie'].map(c => c.replace(/;\s*Secure/gi, ''));
+      }
+
+      // Xử lý viết lại link file PDF DMS từ API MinIO để đi qua /dms-proxy tránh lỗi CORS
+      const isMinio = pathname.includes('/minio') || pathname.includes('getLink');
+      const isJson = (respHeaders['content-type'] || '').includes('application/json');
+
+      if (isMinio && isJson) {
+        const resChunks = [];
+        proxyRes.on('data', chunk => resChunks.push(chunk));
+        proxyRes.on('end', () => {
+          let bodyText = Buffer.concat(resChunks).toString('utf8');
+          if (bodyText.includes('dms-') || bodyText.includes('vnpt.vn')) {
+            bodyText = bodyText.replace(/https?(?::\\\/\\\/|:\/\/)(dms[-a-z0-9]*\.vnpt\.vn[^\",\s]+)/g, (match) => {
+              const cleanUrl = match.replace(/\\\//g, '/');
+              return '/dms-proxy?target=' + encodeURIComponent(cleanUrl);
+            });
+          }
+          delete respHeaders['content-length'];
+          respHeaders['content-length'] = Buffer.byteLength(bodyText);
+          res.writeHead(proxyRes.statusCode, respHeaders);
+          res.end(bodyText);
+
+          logApiCall({
+            subdomain: sub,
+            method: req.method,
+            targetUrl: targetUrl,
+            frameUrl: realFrameUrl,
+            statusCode: proxyRes.statusCode,
+            durationMs: durationMs,
+            headers: req.headers,
+            body: bodySample,
+            contentType: proxyRes.headers['content-type'] || ''
+          });
+        });
+        return;
       }
 
       res.writeHead(proxyRes.statusCode, respHeaders);

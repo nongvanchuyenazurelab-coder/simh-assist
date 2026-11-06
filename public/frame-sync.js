@@ -94,6 +94,15 @@
     var TARGET_API_HOST = 'ytcs-gw.hmis.vn';
     var TARGET_HOST = 'ytcs.hmis.vn';
 
+    function rewriteDmsUrl(url) {
+      if (!url || typeof url !== 'string') return url;
+      // Khắc phục triệt để lỗi CORS khi xem/in PDF từ dms-hisl4.vnpt.vn
+      if (/^https?:\/\/dms[-a-z0-9]*\.vnpt\.vn\//i.test(url)) {
+        return '/dms-proxy?target=' + encodeURIComponent(url);
+      }
+      return url;
+    }
+
     function getRealFrameUrl() {
       try {
         var u = window.location.href;
@@ -168,6 +177,10 @@
           var headers = {};
 
           if (typeof input === 'string') {
+            var rw = rewriteDmsUrl(input);
+            if (rw !== input) {
+              input = rw;
+            }
             url = input;
             if (init) {
               method = init.method || 'GET';
@@ -175,6 +188,16 @@
               headers = init.headers || {};
             }
           } else if (input && typeof input === 'object') {
+            if (input.url) {
+              var rw = rewriteDmsUrl(input.url);
+              if (rw !== input.url) {
+                try {
+                  input = new Request(rw, input);
+                } catch(e) {
+                  input.url = rw;
+                }
+              }
+            }
             url = input.url || '';
             method = (init && init.method) || input.method || 'GET';
             body = (init && init.body) || input.body || null;
@@ -238,10 +261,18 @@
     var origSetHeader = XMLHttpRequest.prototype.setRequestHeader;
 
     XMLHttpRequest.prototype.open = function(method, url) {
+      var targetUrl = url;
+      try {
+        if (typeof url === 'string') {
+          targetUrl = rewriteDmsUrl(url);
+        }
+      } catch(e) {}
       this._ytcs_method = method;
-      this._ytcs_url = url;
+      this._ytcs_url = targetUrl;
       this._ytcs_headers = {};
-      return origOpen.apply(this, arguments);
+      var args = Array.prototype.slice.call(arguments);
+      args[1] = targetUrl;
+      return origOpen.apply(this, args);
     };
 
     XMLHttpRequest.prototype.setRequestHeader = function(name, value) {
@@ -294,5 +325,47 @@
       } catch(e) {}
       return origSend.apply(this, arguments);
     };
+
+    // Hook window.open nếu mở trực tiếp link dms-hisl4.vnpt.vn
+    try {
+      var origWindowOpen = window.open;
+      if (origWindowOpen) {
+        window.open = function(url, target, features) {
+          try {
+            if (typeof url === 'string') {
+              url = rewriteDmsUrl(url);
+            }
+          } catch(e) {}
+          return origWindowOpen.call(window, url, target, features);
+        };
+      }
+    } catch(e) {}
+
+    // Bắt và chuyển tiếp click trên thẻ <a> chứa link dms-hisl4.vnpt.vn
+    try {
+      document.addEventListener('click', function(e) {
+        var target = e.target;
+        while (target && target !== document) {
+          if (target.tagName === 'A' && target.href) {
+            var rw = rewriteDmsUrl(target.href);
+            if (rw !== target.href) {
+              target.href = rw;
+            }
+          }
+          target = target.parentNode;
+        }
+      }, true);
+    } catch(e) {}
+
+    // Hook setAttribute trên iframe / embed / object để nạp PDF qua /dms-proxy
+    try {
+      var origSetAttribute = Element.prototype.setAttribute;
+      Element.prototype.setAttribute = function(name, value) {
+        if (name && (name.toLowerCase() === 'src' || name.toLowerCase() === 'href' || name.toLowerCase() === 'data') && typeof value === 'string') {
+          value = rewriteDmsUrl(value);
+        }
+        return origSetAttribute.call(this, name, value);
+      };
+    } catch(e) {}
   })();
 })();
