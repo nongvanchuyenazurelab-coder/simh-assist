@@ -1,0 +1,73 @@
+[
+  {
+    "id": "acc-1",
+    "name": "Trạm Linh Sơn 1",
+    "username": "19502.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2",
+    "note": "Tài khoản quản trị bệnh viện CSYT 19502"
+  },
+  {
+    "id": "acc-1793677372382",
+    "name": "Trạm Nam Hòa",
+    "username": "19518.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793677651615",
+    "name": "Điểm trạm Quang Sơn",
+    "username": "19505.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793677821713",
+    "name": "Điểm trạm Nam Hòa",
+    "username": "19512.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793756135855",
+    "name": "TRẠM Y TẾ XÃ YÊN BÌNH",
+    "username": "06034.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793844416708",
+    "name": "TRẠM Y TẾ PHƯỜNG LINH SƠN 19128.adminbv",
+    "username": "19128.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793846735201",
+    "name": "TRẠM Y TẾ XÃ TÂN CƯƠNG 19123.adminbv",
+    "username": "19123.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793861615527",
+    "name": "TRẠM Y TẾ THANH MAI 06012.adminbv",
+    "username": "06012.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793927188427",
+    "name": "TRẠM Y TẾ PHƯỜNG QUAN TRIỀU19101.adminbv",
+    "username": "19101.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  },
+  {
+    "id": "acc-1793927615690",
+    "name": "Đơn vị Test - 19112.adminbv",
+    "username": "19112.adminbv",
+    "password": "hIs4Yte#2025#adMiN",
+    "regionCode": "region2"
+  }
+]

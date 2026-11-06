@@ -1,0 +1,57 @@
+[
+  {
+    "id": "mod_1",
+    "name": "⚡ Khám Ngoại trú (Tiếp nhận)",
+    "route": "/new/his/ngoaitru/tnkb/tiepnhan"
+  },
+  {
+    "id": "mod_2",
+    "name": "Khám Ngoại trú",
+    "route": "/new/his/ngoaitru/kb/ds-khambenh"
+  },
+  {
+    "id": "mod_3",
+    "name": "Duyệt phát thuốc ngoại trú",
+    "route": "/new/his/duoc/duyet-phat-thuoc-ngoai-tru/ds-phieu-ngtru"
+  },
+  {
+    "id": "mod_4",
+    "name": "Tra cứu tồn",
+    "route": "/new/his/duoc/quan-ly-duoc-vat-tu/tra-cuu-tvt-tk-kt-tt/tra-cuu-ton-kho"
+  },
+  {
+    "id": "mod_5",
+    "name": "Tra cứu nhập xuất tồn",
+    "route": "/new/his/duoc/quan-ly-duoc-vat-tu/tra-cuu-nhap-xuat-ton"
+  },
+  {
+    "id": "mod_6",
+    "name": "Duyệt bảo hiểm",
+    "route": "/new/his/vien-phi/duyet-bao-hiem"
+  },
+  {
+    "id": "mod_7",
+    "name": "🛠️ Cấu hình Liên thông (KSK / ĐTĐT)",
+    "route": "/lien-thong-ksk"
+  },
+  {
+    "id": "mod_8",
+    "name": "Cập nhật ngày xuất thuốc",
+    "route": "/new/his/duoc/tool-duoc/tool-cap-nhat-ngay-nx-duyet"
+  },
+  {
+    "id": "mod_canhbao",
+    "name": "⚠️ Cảnh Báo Đơn Vị",
+    "route": "/canh-bao"
+  },
+  {
+    "id": "mod_9",
+    "name": "Màn hình Chọn khoa phòng",
+    "route": "/new/his/chon-khoaphong"
+  },
+  {
+    "id": "mod_10",
+    "name": "Màn hình Login gốc",
+    "route": "/new/his/dang-nhap"
+  }
+]

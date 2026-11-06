@@ -1,0 +1,3987 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YTCS HMIS - Quản trị Đa Tài khoản & Đa Tab</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏥</text></svg>">
+  <style>
+    :root {
+      --primary: #1890ff;
+      --primary-hover: #40a9ff;
+      --primary-active: #096dd9;
+      --success: #52c41a;
+      --warning: #faad14;
+      --danger: #f5222d;
+      --bg-header: #ffffff;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --border-color: #e5e7eb;
+      --header-height: 54px;
+      --tabbar-height: 38px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #f0f2f5;
+    }
+
+    #app-container {
+      display: flex;
+      flex-direction: column;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* 1. Header điều khiển tài khoản */
+    #top-header {
+      height: var(--header-height);
+      background: var(--bg-header);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+      z-index: 1000;
+      transition: margin-top 0.25s ease;
+      position: relative;
+    }
+
+    #top-header.collapsed {
+      margin-top: calc(-1 * var(--header-height));
+    }
+
+    #expand-trigger {
+      position: fixed;
+      top: 0;
+      right: 20px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 4px 12px;
+      font-size: 12px;
+      font-weight: 500;
+      border-bottom-left-radius: 6px;
+      border-bottom-right-radius: 6px;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 2000;
+      display: none;
+      transition: background 0.2s;
+    }
+    #expand-trigger:hover {
+      background: var(--primary-hover);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 15px;
+      color: #0f172a;
+      white-space: nowrap;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #1890ff, #0050b3);
+      color: white;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .account-select-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    select.account-select {
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #f9fafb;
+      font-size: 12.5px;
+      color: #374151;
+      font-weight: 500;
+      outline: none;
+      cursor: pointer;
+      min-width: 180px;
+      max-width: 220px;
+      transition: all 0.2s;
+    }
+    select.account-select:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+
+    /* Searchable Account Dropdown in Header */
+    .searchable-account-dropdown {
+      position: relative;
+      display: inline-block;
+      user-select: none;
+    }
+
+    .account-dropdown-trigger {
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      background: #f9fafb;
+      font-size: 12.5px;
+      color: #1f2937;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 200px;
+      max-width: 260px;
+      transition: all 0.2s ease;
+      outline: none;
+      text-align: left;
+    }
+
+    .account-dropdown-trigger:hover {
+      background: #ffffff;
+      border-color: #9ca3af;
+    }
+
+    .account-dropdown-trigger.open,
+    .account-dropdown-trigger:focus {
+      border-color: var(--primary);
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+
+    .acc-trigger-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+
+    .acc-trigger-label {
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 600;
+    }
+
+    .acc-trigger-arrow {
+      font-size: 10px;
+      color: #6b7280;
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    .account-dropdown-trigger.open .acc-trigger-arrow {
+      transform: rotate(180deg);
+    }
+
+    .account-dropdown-menu {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      width: 350px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+      z-index: 2500;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+      animation: dropdownFadeIn 0.15s ease-out;
+    }
+
+    .account-dropdown-menu.open {
+      display: flex;
+    }
+
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .account-search-box {
+      padding: 8px 10px;
+      background: #f8fafc;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+
+    .account-search-icon {
+      font-size: 12px;
+      color: #64748b;
+      flex-shrink: 0;
+    }
+
+    .account-search-input {
+      flex: 1;
+      height: 28px;
+      padding: 0 24px 0 6px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      font-size: 12px;
+      color: #1e293b;
+      outline: none;
+      background: #ffffff;
+      transition: border-color 0.2s;
+    }
+
+    .account-search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(24, 144, 255, 0.2);
+    }
+
+    .account-search-clear {
+      position: absolute;
+      right: 16px;
+      background: none;
+      border: none;
+      font-size: 14px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 0 4px;
+      line-height: 1;
+    }
+    .account-search-clear:hover {
+      color: #334155;
+    }
+
+    .account-items-list {
+      max-height: 270px;
+      overflow-y: auto;
+      padding: 4px 0;
+    }
+
+    .account-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 7px 10px;
+      cursor: pointer;
+      border-bottom: 1px solid #f1f5f9;
+      transition: background 0.15s;
+    }
+
+    .account-item:last-child {
+      border-bottom: none;
+    }
+
+    .account-item:hover,
+    .account-item.keyboard-focus {
+      background: #f0f9ff;
+    }
+
+    .account-item.selected {
+      background: #e0f2fe;
+      border-left: 3px solid #0284c7;
+    }
+
+    .account-item-info {
+      flex: 1;
+      min-width: 0;
+      padding-right: 8px;
+    }
+
+    .account-item-title {
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #0f172a;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .account-item-sub {
+      font-size: 11px;
+      color: #64748b;
+      font-family: monospace;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 1px;
+    }
+
+    .account-item-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      opacity: 0.85;
+    }
+
+    .account-item:hover .account-item-actions {
+      opacity: 1;
+    }
+
+    .btn-mini-acc {
+      height: 22px;
+      padding: 0 6px;
+      font-size: 10.5px;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+
+    .btn-mini-acc:hover {
+      opacity: 0.85;
+    }
+
+    .btn-mini-acc.login {
+      background: #1890ff;
+      color: white;
+    }
+
+    .btn-mini-acc.newtab {
+      background: #10b981;
+      color: white;
+    }
+
+    .account-item-empty {
+      padding: 16px 12px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .account-dropdown-footer {
+      padding: 6px 10px;
+      background: #f8fafc;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .account-dropdown-count {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .account-dropdown-manage-btn {
+      background: none;
+      border: none;
+      font-size: 11.5px;
+      color: #2563eb;
+      font-weight: 500;
+      cursor: pointer;
+      padding: 2px 4px;
+      border-radius: 4px;
+    }
+
+    .account-dropdown-manage-btn:hover {
+      text-decoration: underline;
+    }
+
+    .header-center {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .input-group {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-field {
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 12.5px;
+      outline: none;
+      transition: all 0.2s;
+      background: #fff;
+    }
+    .input-field:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+    .input-user { width: 130px; }
+    .input-pass { width: 140px; padding-right: 26px; }
+
+    .toggle-pass-btn {
+      position: absolute;
+      right: 5px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 2px;
+    }
+
+    .btn {
+      height: 32px;
+      padding: 0 12px;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      font-size: 12.5px;
+      font-weight: 500;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-primary:active { background: var(--primary-active); }
+
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #73d13d; }
+
+    .btn-outline { background: #fff; color: #374151; border-color: #d1d5db; }
+    .btn-outline:hover { background: #f3f4f6; border-color: #9ca3af; color: #111827; }
+
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid #d1d5db;
+      color: #4b5563;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+    .btn-icon:hover { background: #f3f4f6; color: #111827; }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .user-status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      color: #166534;
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 500;
+      max-width: 280px;
+    }
+    .user-status-pill.offline {
+      background: #fef2f2;
+      border-color: #fecaca;
+      color: #991b1b;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--success);
+      flex-shrink: 0;
+    }
+    .status-dot.offline { background: var(--danger); }
+    .status-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* 2. Thanh Tab Bar (Chrome / Edge Style) */
+    #tab-bar-container {
+      height: var(--tabbar-height);
+      background: #e5e7eb;
+      border-bottom: 1px solid #d1d5db;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 10px 0 6px;
+      gap: 4px;
+      z-index: 999;
+      position: relative;
+    }
+
+    #tabs-list {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      overflow-x: auto;
+      max-width: calc(100vw - 320px);
+      scrollbar-width: none;
+    }
+    #tabs-list::-webkit-scrollbar { display: none; }
+
+    .tab-item {
+      height: 32px;
+      background: #dbeafe;
+      border: 1px solid #cbd5e1;
+      border-bottom: none;
+      border-radius: 7px 7px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 12px;
+      font-size: 12.5px;
+      color: #475569;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+      position: relative;
+      max-width: 220px;
+      min-width: 120px;
+    }
+
+    .tab-item:hover {
+      background: #eff6ff;
+      color: #1e293b;
+    }
+
+    .tab-item.active {
+      background: #ffffff;
+      color: #1890ff;
+      font-weight: 600;
+      border-color: #cbd5e1;
+      box-shadow: 0 -2px 5px rgba(0,0,0,0.04);
+      height: 34px;
+      z-index: 10;
+    }
+
+    .tab-item.active::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: #ffffff;
+    }
+
+    .tab-icon {
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .tab-title {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .tab-close {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #94a3b8;
+      transition: all 0.15s;
+      flex-shrink: 0;
+    }
+    .tab-close:hover {
+      background: rgba(0, 0, 0, 0.12);
+      color: #ef4444;
+    }
+
+    .tabbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: 4px;
+      padding-bottom: 3px;
+      flex-shrink: 0;
+    }
+
+    .btn-tab-action {
+      height: 28px;
+      padding: 0 10px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #1890ff;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn-tab-action:hover {
+      background: #f0f7ff;
+      border-color: #1890ff;
+    }
+
+    .tabbar-right-actions {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-bottom: 3px;
+    }
+
+    .btn-browser-tab {
+      height: 28px;
+      padding: 0 10px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      color: #475569;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s;
+    }
+    .btn-browser-tab:hover {
+      background: #f8fafc;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+
+    /* 3. Vùng chứa Iframes */
+    #frame-container {
+      flex: 1;
+      min-height: 0;
+      width: 100%;
+      position: relative;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .tab-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+    }
+
+    .tab-frame.active {
+      display: block !important;
+    }
+
+    /* 4. Thanh hiển thị link Frame ở đáy trang (Bottom Bar) */
+    #bottom-bar {
+      height: 36px;
+      min-height: 36px;
+      background: #ffffff;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-main);
+      box-shadow: 0 -1px 4px rgba(0, 0, 0, 0.04);
+      z-index: 999;
+      flex-shrink: 0;
+      transition: all 0.2s ease;
+    }
+
+    .bottom-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bottom-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 8px;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #e2e8f0;
+      border-radius: 4px;
+      font-weight: 600;
+      font-size: 11.5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .bottom-url-input-wrapper {
+      position: relative;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      min-width: 0;
+    }
+
+    .bottom-url-input {
+      width: 100%;
+      height: 26px;
+      padding: 0 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 4px;
+      background: #f8fafc;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 11.5px;
+      color: #0f172a;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .bottom-url-input:focus {
+      background: #ffffff;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.15);
+    }
+
+    .bottom-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .btn-bottom {
+      height: 26px;
+      padding: 0 8px;
+      font-size: 11.5px;
+      border-radius: 4px;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+      transition: all 0.15s;
+    }
+    .btn-bottom:hover {
+      background: #f1f5f9;
+      color: #0f172a;
+      border-color: #94a3b8;
+    }
+    .btn-bottom.btn-primary-mini {
+      background: var(--primary);
+      color: #ffffff;
+      border-color: var(--primary);
+      font-weight: 500;
+    }
+    .btn-bottom.btn-primary-mini:hover {
+      background: var(--primary-hover);
+      border-color: var(--primary-hover);
+    }
+
+    /* Floating toggle pill khi ẩn bottom bar */
+    #btn-show-bottom-bar {
+      position: fixed;
+      bottom: 8px;
+      right: 14px;
+      height: 28px;
+      padding: 0 10px;
+      background: #1e293b;
+      color: #ffffff;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+      align-items: center;
+      gap: 5px;
+      z-index: 1000;
+      transition: all 0.2s;
+    }
+    #btn-show-bottom-bar:hover {
+      background: #0f172a;
+      transform: translateY(-1px);
+    }
+
+    #loading-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, #1890ff, #52c41a, #1890ff);
+      background-size: 200% 100%;
+      animation: loadingAnim 1.5s infinite linear;
+      display: none;
+      z-index: 1001;
+    }
+
+    @keyframes loadingAnim {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1f2937;
+      color: white;
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      z-index: 3000;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s ease;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #toast.success { background: #065f46; border-left: 4px solid #34d399; }
+    #toast.error { background: #991b1b; border-left: 4px solid #f87171; }
+    #toast.info { background: #1e40af; border-left: 4px solid #60a5fa; }
+
+    /* Modals */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 2500;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-backdrop.open { display: flex; }
+
+    .modal-card {
+      background: #ffffff;
+      border-radius: 10px;
+      width: 580px;
+      max-width: 92vw;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      overflow: hidden;
+    }
+
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+    }
+    .modal-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      cursor: pointer;
+      color: #6b7280;
+    }
+
+    .modal-body {
+      padding: 18px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .account-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 13px;
+    }
+    .account-table th, .account-table td {
+      border: 1px solid #e5e7eb;
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .account-table th {
+      background: #f9fafb;
+      font-weight: 600;
+      color: #374151;
+    }
+    .account-table tr:hover { background: #f3f4f6; }
+
+    .form-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .form-group {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #4b5563;
+    }
+    .form-control {
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+    }
+    .form-control:focus { border-color: var(--primary); }
+
+    .modal-footer {
+      padding: 12px 18px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9fafb;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* API Logs Inspector Modal */
+    .apilog-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #ffffff;
+      background: #0284c7;
+      border-radius: 9px;
+      margin-left: 5px;
+      line-height: 1;
+    }
+    .btn-bottom .apilog-badge {
+      background: #0ea5e9;
+    }
+    .modal-card.apilogs-modal-card {
+      width: 960px;
+      max-width: 95vw;
+      max-height: 88vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .apilogs-modal-body {
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      overflow-y: auto;
+      flex: 1;
+      background: #f8fafc;
+    }
+    .apilogs-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+      background: #ffffff;
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+    }
+    .apilogs-toolbar-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      min-width: 280px;
+    }
+    .apilogs-search {
+      flex: 1;
+      height: 32px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12.5px;
+      outline: none;
+    }
+    .apilogs-search:focus {
+      border-color: var(--primary);
+    }
+    .apilogs-sub-select {
+      height: 32px;
+      padding: 0 8px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+      outline: none;
+      min-width: 140px;
+    }
+    .apilogs-toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .apilogs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .apilog-card {
+      background: #ffffff;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      transition: all 0.2s ease;
+    }
+    .apilog-card:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+    }
+    .apilog-header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .apilog-header-tags {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .apilog-pill {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .apilog-pill-get { background: #e0f2fe; color: #0284c7; }
+    .apilog-pill-post { background: #dcfce7; color: #16a34a; }
+    .apilog-pill-put { background: #fef3c7; color: #d97706; }
+    .apilog-pill-delete { background: #fee2e2; color: #dc2626; }
+    .apilog-status {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .apilog-status-ok { background: #dcfce7; color: #15803d; }
+    .apilog-status-err { background: #fee2e2; color: #b91c1c; }
+    .apilog-time-tag {
+      font-size: 11.5px;
+      color: #64748b;
+    }
+    .apilog-sub-tag {
+      background: #f1f5f9;
+      color: #475569;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .apilog-url-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 12.5px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+    .apilog-url-line .label {
+      font-weight: 600;
+      white-space: nowrap;
+      min-width: 105px;
+      color: #475569;
+      font-size: 11.5px;
+    }
+    .apilog-url-line .val-frame {
+      color: #7c3aed;
+      font-weight: 600;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .apilog-url-line .val-api {
+      color: #0284c7;
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .apilog-actions-row {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 8px;
+      padding-top: 6px;
+      border-top: 1px dashed #f1f5f9;
+      margin-top: 4px;
+    }
+    .btn-apilog-action {
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 5px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .btn-apilog-curl {
+      background: #f0fdf4;
+      color: #166534;
+      border-color: #bbf7d0;
+    }
+    .btn-apilog-curl:hover {
+      background: #dcfce7;
+      border-color: #86efac;
+    }
+    .btn-apilog-bocdulieu {
+      background: #f5f3ff;
+      color: #6d28d9;
+      border-color: #ddd6fe;
+      font-weight: 600;
+    }
+    .btn-apilog-bocdulieu:hover {
+      background: #ede9fe;
+      border-color: #c4b5fd;
+      color: #5b21b6;
+    }
+    .btn-apilog-excel {
+      background: #eff6ff;
+      color: #1e40af;
+      border-color: #bfdbfe;
+    }
+    .btn-apilog-excel:hover {
+      background: #dbeafe;
+      border-color: #93c5fd;
+    }
+    .btn-apilog-detail {
+      background: #f8fafc;
+      color: #475569;
+      border-color: #cbd5e1;
+    }
+    .btn-apilog-detail:hover {
+      background: #f1f5f9;
+      color: #1e293b;
+    }
+    .apilog-detail-box {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 11px;
+      padding: 10px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      max-height: 220px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="app-container">
+    <!-- 1. Thanh Header Quản trị & Đăng nhập -->
+    <header id="top-header">
+      <!-- Cụm trái: Logo & Chọn nhanh tài khoản -->
+      <div class="header-left">
+        <a href="/" class="brand" title="Trang quản trị đa tài khoản YTCS HMIS">
+          <div class="brand-icon">🏥</div>
+          <span>YTCS Manager</span>
+        </a>
+
+        <!-- Searchable Account Switcher Combobox -->
+        <div class="searchable-account-dropdown" id="account-dropdown-wrapper">
+          <button type="button" class="account-dropdown-trigger" id="account-dropdown-trigger" title="Chọn nhanh tài khoản đã lưu (Có tìm kiếm)">
+            <span class="acc-trigger-icon">🏥</span>
+            <span class="acc-trigger-label" id="account-dropdown-label">-- Danh sách tài khoản --</span>
+            <span class="acc-trigger-arrow">▾</span>
+          </button>
+
+          <div class="account-dropdown-menu" id="account-dropdown-menu">
+            <div class="account-search-box">
+              <span class="account-search-icon">🔍</span>
+              <input type="text" id="account-search-input" class="account-search-input" placeholder="Tìm kiếm tài khoản / trạm..." autocomplete="off" spellcheck="false">
+              <button type="button" id="account-search-clear" class="account-search-clear" title="Xóa tìm kiếm" style="display:none;">&times;</button>
+            </div>
+            <div class="account-items-list" id="account-items-list">
+              <!-- Render động danh sách tài khoản -->
+            </div>
+            <div class="account-dropdown-footer">
+              <span id="account-dropdown-count" class="account-dropdown-count">0 tài khoản</span>
+              <button type="button" id="btn-dropdown-manage" class="account-dropdown-manage-btn">⚙️ Quản lý TK</button>
+            </div>
+          </div>
+
+          <!-- Select ẩn giữ nguyên ID để tương thích mã JavaScript -->
+          <select id="saved-accounts-select" style="display: none;"></select>
+        </div>
+      </div>
+
+      <!-- Cụm giữa: Form nhập username/password trực tiếp -->
+      <div class="header-center">
+        <div class="input-group">
+          <input type="text" id="input-username" class="input-field input-user" placeholder="Tài khoản..." autocomplete="username">
+        </div>
+
+        <div class="input-group">
+          <input type="password" id="input-password" class="input-field input-pass" placeholder="Mật khẩu..." autocomplete="current-password">
+          <button type="button" id="btn-toggle-pass" class="toggle-pass-btn" title="Hiện/Ẩn mật khẩu">👁️</button>
+        </div>
+
+        <!-- Nút Đăng nhập cho Tab hiện tại -->
+        <button type="button" id="btn-login-current" class="btn btn-primary" title="Đăng nhập tài khoản này vào Tab đang chọn">
+          <span id="login-icon">⚡</span>
+          <span id="login-text">Đăng nhập</span>
+        </button>
+
+        <!-- Nút Đăng nhập mở thành Tab MỚI -->
+        <button type="button" id="btn-add-tab-header" class="btn btn-success" title="Đăng nhập và mở thành một Tab làm việc mới">
+          <span>➕ Mở Tab mới</span>
+        </button>
+
+        <button type="button" id="btn-save-current" class="btn btn-outline" title="Lưu tài khoản này vào danh sách nhớ">
+          💾 Lưu TK
+        </button>
+      </div>
+
+      <!-- Cụm phải: Trạng thái & Tiện ích -->
+      <div class="header-right">
+        <!-- Thông tin phiên của Tab hiện tại -->
+        <div id="session-badge" class="user-status-pill offline" title="Thông tin phiên làm việc của Tab hiện tại">
+          <div id="session-dot" class="status-dot offline"></div>
+          <span id="session-name" class="status-text">Chưa kết nối</span>
+        </div>
+
+        <!-- Chuyển phân hệ nhanh & Tùy chỉnh module -->
+        <div style="display: inline-flex; align-items: center; gap: 4px;">
+          <select id="quick-route-select" class="account-select" style="min-width: 155px; max-width: 175px;" title="Chuyển nhanh tới phân hệ / module">
+            <option value="/new/his/ngoaitru/tnkb/tiepnhan" selected>⚡ Khám Ngoại trú (Tiếp nhận)</option>
+            <option value="/new/his/ngoaitru">Khám Ngoại trú (Tổng quan)</option>
+            <option value="/new/his/noitru">Điều trị Nội trú</option>
+            <option value="/new/his/duoc">Quản lý Dược</option>
+            <option value="/new/his/vien-phi">Quản lý Viện phí</option>
+            <option value="/new/his/quantri-hethong">Quản trị hệ thống</option>
+            <option value="/lien-thong-ksk">🛠️ Cấu hình Liên thông (KSK / ĐTĐT)</option>
+            <option value="/excel-tool">📊 Xuất Excel Danh mục DV (cURL)</option>
+            <option value="/canh-bao">⚠️ Cảnh Báo Đơn Vị</option>
+            <option value="/new/his/chon-khoaphong">Màn hình Chọn khoa phòng</option>
+            <option value="/new/his/dang-nhap">Màn hình Login gốc</option>
+            <option value="__manage_modules__" style="color: #2563eb; font-weight: bold;">⚙️ Tùy chỉnh danh sách module...</option>
+          </select>
+          <button type="button" id="btn-open-modules-modal" class="btn btn-outline" style="padding: 4px 7px; font-size: 11px; font-weight: 600; display: inline-flex; align-items: center; gap: 3px; height: 30px;" title="Tùy chỉnh & sửa danh sách module hay dùng">
+            <span>⚙️ Sửa</span>
+          </button>
+        </div>
+
+        <!-- Nút mở Nhật ký API (đúng theo URL Frame) -->
+        <button type="button" id="btn-open-apilogs-header" class="btn btn-outline" title="Xem nhật ký API hệ thống (Đúng theo URL của Frame)">
+          📡 Log API <span id="header-apilog-badge" class="apilog-badge">0</span>
+        </button>
+
+        <!-- Quản lý tài khoản -->
+        <button type="button" id="btn-open-modal" class="btn btn-outline" title="Quản lý danh sách tài khoản (Thêm/Sửa/Xoá/Sao lưu)">
+          ⚙️ Quản lý TK
+        </button>
+
+        <!-- Tải lại Frame -->
+        <button type="button" id="btn-reload-frame" class="btn-icon" title="Tải lại tab hiện tại">
+          🔄
+        </button>
+
+        <!-- Ẩn/Hiện thanh link Frame ở đáy trang -->
+        <button type="button" id="btn-toggle-bottom-bar" class="btn-icon" title="Ẩn / Hiện thanh link Frame ở đáy trang">
+          🔗
+        </button>
+
+        <!-- Thu gọn header -->
+        <button type="button" id="btn-collapse-header" class="btn-icon" title="Thu gọn thanh công cụ để mở rộng không gian làm việc">
+          ▲
+        </button>
+      </div>
+    </header>
+
+    <!-- Nút mở lại Header khi đã thu gọn -->
+    <button id="expand-trigger" type="button" title="Nhấn để hiện lại thanh tài khoản">▼ Hiện thanh Đăng nhập</button>
+
+    <!-- 2. Thanh In-App Tab Bar (Chrome/Edge Style) -->
+    <nav id="tab-bar-container">
+      <div id="tabs-list">
+        <!-- Render động danh sách các Tab ở đây -->
+      </div>
+
+      <div class="tabbar-actions">
+        <button type="button" id="btn-new-tab-dialog" class="btn-tab-action" title="Mở thêm một Tab làm việc mới">
+          ➕ Thêm Tab
+        </button>
+        <button type="button" id="btn-open-ksk-tab" class="btn-tab-action" style="color: #059669; border-color: #a7f3d0; background: #ecfdf5; font-weight: 600;" title="Mở trang Cấu hình Liên thông & Nghiệp vụ (KSK, ĐTĐT, Viện phí, Mẹ & Bé, Dược)">
+          🛠️ Cấu hình Nghiệp vụ & KSK
+        </button>
+        <button type="button" id="btn-open-excel-tab" class="btn-tab-action" style="color: #0d9488; border-color: #99f6e4; background: #f0fdfa; font-weight: 600;" title="Mở Tool Trích xuất Danh mục Dịch vụ VNPT-HIS sang Excel (cURL to Excel)">
+          📊 Xuất Excel Danh mục DV
+        </button>
+        <button type="button" id="btn-open-canhbao-tab" class="btn-tab-action" style="color: #b45309; border-color: #fde68a; background: #fffbeb; font-weight: 600;" title="Mở Dashboard Cảnh Báo Đơn Vị (Bệnh nhân chưa duyệt BHYT, KSK, ĐTĐT...)">
+          ⚠️ Cảnh Báo Đơn Vị
+        </button>
+      </div>
+
+      <div class="tabbar-right-actions">
+        <button type="button" id="btn-open-browser-tab" class="btn-browser-tab" title="Mở một Tab Trình duyệt Chrome/Edge mới độc lập (acc.localhost:8888)">
+          ↗️ Mở Tab Trình duyệt riêng
+        </button>
+      </div>
+    </nav>
+
+    <!-- Thanh tiến trình loading -->
+    <div id="loading-bar"></div>
+
+    <!-- 3. Khu vực chứa Iframes của từng Tab -->
+    <main id="frame-container">
+      <!-- Render động các iframes ở đây -->
+    </main>
+
+    <!-- 4. Thanh hiển thị link Frame ở đáy trang (Bottom Bar) -->
+    <footer id="bottom-bar">
+      <div class="bottom-left">
+        <span class="bottom-tag" id="bottom-tab-badge" title="Tên Tab và phiên làm việc hiện tại">
+          🏥 <span id="bottom-tab-title">Tab 1</span>
+        </span>
+        <div class="bottom-url-input-wrapper">
+          <input type="text" id="bottom-frame-url" class="bottom-url-input" title="Đường link của Frame hiện tại (Nhấn Enter để chuyển đến)" placeholder="Đang nạp đường dẫn Frame..." autocomplete="off" spellcheck="false">
+        </div>
+      </div>
+      <div class="bottom-actions">
+        <button type="button" id="btn-bottom-navigate" class="btn-bottom btn-primary-mini" title="Chuyển Frame đến địa chỉ trên (hoặc gõ đường link rồi nhấn Enter)">
+          ➜ Đi tới
+        </button>
+        <button type="button" id="btn-bottom-copy" class="btn-bottom" title="Sao chép đường link này vào Clipboard">
+          📋 Sao chép
+        </button>
+        <button type="button" id="btn-open-apilogs-bottom" class="btn-bottom" title="Xem nhật ký API hệ thống (Đúng theo URL của Frame)">
+          📡 Log API <span id="bottom-apilog-badge" class="apilog-badge">0</span>
+        </button>
+        <button type="button" id="btn-bottom-open-tab" class="btn-bottom" title="Mở đường link Frame này sang Tab Trình duyệt Chrome riêng">
+          ↗️ Mở tab mới
+        </button>
+        <button type="button" id="btn-bottom-reload" class="btn-bottom" title="Tải lại nội dung Frame">
+          🔄 Tải lại
+        </button>
+        <button type="button" id="btn-bottom-hide" class="btn-bottom" title="Thu gọn / Ẩn thanh link ở bottom">
+          ▼ Ẩn
+        </button>
+      </div>
+    </footer>
+
+    <!-- Nút mở lại Bottom Bar khi đã thu gọn -->
+    <button type="button" id="btn-show-bottom-bar" title="Nhấn để hiện lại thanh link Frame ở đáy trang">
+      🔗 Hiện Link Frame
+    </button>
+  </div>
+
+  <!-- Modal Quản lý Danh sách Tài khoản -->
+  <div id="accounts-modal" class="modal-backdrop">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Quản lý danh sách tài khoản Quản trị</h3>
+        <button type="button" id="btn-close-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+          <h4 style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: #1e293b;">Thêm tài khoản mới</h4>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1.2;">
+              <label>Tên gợi nhớ (Ví dụ: Trạm Linh Sơn 1)</label>
+              <input type="text" id="modal-new-name" class="form-control" placeholder="Tên đơn vị / trạm...">
+            </div>
+            <div class="form-group">
+              <label>Tên đăng nhập</label>
+              <input type="text" id="modal-new-user" class="form-control" placeholder="19502.adminbv">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Mật khẩu</label>
+              <input type="password" id="modal-new-pass" class="form-control" placeholder="Nhập mật khẩu...">
+            </div>
+            <div class="form-group" style="flex: 0.6;">
+              <label>Region Code</label>
+              <input type="text" id="modal-new-region" class="form-control" value="region2">
+            </div>
+            <div class="form-group" style="justify-content: flex-end;">
+              <button type="button" id="modal-btn-add" class="btn btn-primary" style="height: 32px;">+ Thêm vào danh sách</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 14px; margin-bottom: 8px;">
+          <h4 style="font-size: 13px; font-weight: 600; color: #1e293b; margin: 0;">Danh sách tài khoản đã lưu (<span id="modal-account-count">0</span>)</h4>
+          <div style="position: relative; display: flex; align-items: center;">
+            <input type="text" id="modal-account-filter-input" placeholder="🔍 Lọc tài khoản theo tên / username..." style="height: 28px; font-size: 12px; padding: 0 24px 0 8px; border: 1px solid #cbd5e1; border-radius: 6px; width: 220px; outline: none;">
+            <button type="button" id="modal-account-filter-clear" style="position: absolute; right: 6px; background: none; border: none; color: #94a3b8; cursor: pointer; display: none; font-size: 14px; padding: 0 4px;" title="Xoá lọc">&times;</button>
+          </div>
+        </div>
+        <div style="max-height: 280px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px;">
+          <table class="account-table" style="margin-top: 0;">
+            <thead style="position: sticky; top: 0; z-index: 2;">
+              <tr>
+                <th style="width: 36%;">Tên gợi nhớ</th>
+                <th style="width: 26%;">Tài khoản</th>
+                <th style="width: 38%;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="modal-account-rows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <div>
+          <button type="button" id="modal-btn-export" class="btn btn-outline" style="font-size: 12px; height: 30px;">📤 Xuất JSON</button>
+          <button type="button" id="modal-btn-import" class="btn btn-outline" style="font-size: 12px; height: 30px;">📥 Nhập JSON</button>
+          <input type="file" id="modal-file-import" accept=".json" style="display: none;">
+        </div>
+        <button type="button" id="modal-btn-close" class="btn btn-outline">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Quản lý Module / Phân hệ hay dùng -->
+  <div id="modules-modal" class="modal-backdrop">
+    <div class="modal-card" style="width: 640px; max-width: 95vw;">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">⚙️</span>
+          <div>
+            <h3 style="margin: 0; font-size: 15px;">Quản lý Module & Phân hệ hay dùng</h3>
+            <p style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+              Tùy chỉnh danh sách phân hệ xuất hiện ở thanh chuyển nhanh trên Header và Modal tạo tab mới
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-modules-modal" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Form thêm / sửa module -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; margin-bottom: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <h4 id="module-form-title" style="font-size: 13px; font-weight: 600; color: #1e293b; margin: 0;">Thêm Module mới</h4>
+            <button type="button" id="btn-grab-current-url" class="btn btn-outline" style="font-size: 11px; padding: 3px 8px; color: #2563eb; border-color: #93c5fd;" title="Tự động điền tên và đường dẫn của tab đang mở">
+              📌 Lấy URL từ tab đang mở
+            </button>
+          </div>
+          <input type="hidden" id="module-edit-id" value="">
+          <div class="form-row">
+            <div class="form-group" style="flex: 1.2;">
+              <label>Tên hiển thị (Ví dụ: ⚡ Khám Ngoại trú, Báo cáo & tra cứu...)</label>
+              <input type="text" id="module-new-name" class="form-control" placeholder="Tên module...">
+            </div>
+            <div class="form-group" style="flex: 1.5;">
+              <label>Đường dẫn Route (Ví dụ: /new/his/ngoaitru/tnkb/tiepnhan)</label>
+              <input type="text" id="module-new-route" class="form-control" placeholder="/new/his/...">
+            </div>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+            <button type="button" id="btn-cancel-edit-module" class="btn btn-outline" style="display: none; font-size: 12px; padding: 4px 10px;">Hủy sửa</button>
+            <button type="button" id="btn-save-module" class="btn btn-primary" style="font-size: 12px; padding: 4px 12px;">➕ Thêm vào danh sách</button>
+          </div>
+        </div>
+
+        <!-- Bảng danh sách module hiện có -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 12px; font-weight: 600; color: #475569;" id="modules-count-label">Danh sách module (10)</span>
+          <button type="button" id="btn-reset-default-modules" class="btn btn-outline" style="font-size: 11px; padding: 2px 7px; color: #b91c1c; border-color: #fca5a5;" title="Đặt lại toàn bộ danh sách về các module mặc định ban đầu">
+            🔄 Khôi phục mặc định
+          </button>
+        </div>
+
+        <div style="max-height: 270px; overflow-y: auto; border: 1px solid #e5e7eb; border-radius: 6px;">
+          <table class="account-table" style="margin-top: 0;">
+            <thead style="position: sticky; top: 0; z-index: 2;">
+              <tr>
+                <th style="width: 36px; text-align: center;">STT</th>
+                <th style="width: 34%;">Tên hiển thị</th>
+                <th>Đường dẫn Route</th>
+                <th style="width: 75px; text-align: center;">Thứ tự</th>
+                <th style="width: 90px; text-align: center;">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody id="modules-table-body">
+              <!-- Render động -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 11.5px; color: #64748b;">
+          💡 Mẹo: Nhấn ⬆️ / ⬇️ để thay đổi thứ tự ưu tiên trong menu.
+        </div>
+        <button type="button" id="btn-close-modules-footer" class="btn btn-outline">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Mở Tab Mới -->
+  <div id="new-tab-modal" class="modal-backdrop">
+    <div class="modal-card" style="width: 480px;">
+      <div class="modal-header">
+        <h3>➕ Mở Tab Làm Việc Mới</h3>
+        <button type="button" id="btn-close-new-tab-modal" class="modal-close-btn">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom: 12px;">
+          <label>Chọn tài khoản có sẵn</label>
+          <select id="new-tab-account-select" class="form-control" style="height: 36px;">
+            <option value="">-- Chọn tài khoản đã lưu --</option>
+          </select>
+        </div>
+
+        <div style="text-align: center; margin: 10px 0; color: #94a3b8; font-size: 12px;">— HOẶC NHẬP TÀI KHOẢN MỚI —</div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Tài khoản</label>
+            <input type="text" id="new-tab-username" class="form-control" placeholder="Tài khoản...">
+          </div>
+          <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" id="new-tab-password" class="form-control" placeholder="Mật khẩu...">
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top: 10px;">
+          <label>Phân hệ bắt đầu</label>
+          <select id="new-tab-route" class="form-control" style="height: 36px;">
+            <option value="/new/his/ngoaitru/tnkb/tiepnhan" selected>⚡ Khám Ngoại trú (Tiếp nhận khám bệnh)</option>
+            <option value="/new/his/ngoaitru">Khám Ngoại trú (Tổng quan)</option>
+            <option value="/new/his/noitru">Điều trị Nội trú</option>
+            <option value="/new/his/duoc">Quản lý Dược</option>
+            <option value="/new/his/vien-phi">Quản lý Viện phí</option>
+            <option value="/new/his/quantri-hethong">Quản trị hệ thống</option>
+            <option value="/lien-thong-ksk">🛠️ Cấu hình Liên thông (KSK / ĐTĐT / Viện phí)</option>
+            <option value="/excel-tool">📊 Xuất Excel Danh mục DV (cURL)</option>
+            <option value="/canh-bao">⚠️ Cảnh Báo Đơn Vị</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" id="btn-open-as-browser-tab" class="btn btn-outline" title="Mở trong tab trình duyệt Chrome mới">
+          ↗️ Mở Tab Trình duyệt
+        </button>
+        <div>
+          <button type="button" id="btn-cancel-new-tab" class="btn btn-outline">Hủy</button>
+          <button type="button" id="btn-confirm-create-tab" class="btn btn-primary">➕ Tạo Tab Trong Trang</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nhật ký API (API Logs Inspector) -->
+  <div id="apilogs-modal" class="modal-backdrop">
+    <div class="modal-card apilogs-modal-card">
+      <div class="modal-header">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 18px;">📡</span>
+          <div>
+            <h3 style="margin: 0; font-size: 15px;">Nhật ký API hệ thống (Đúng theo URL của Frame)</h3>
+            <p style="font-size: 11.5px; color: #64748b; margin-top: 2px;">
+              Ghi lại tất cả API gọi từ Frame với <strong>URL trang Frame</strong> (<code style="color: #7c3aed;">https://ytcs.hmis.vn/...</code>) và <strong>URL API Target</strong> (<code style="color: #0284c7;">https://ytcs-gw.hmis.vn/...</code>)
+            </p>
+          </div>
+        </div>
+        <button type="button" id="btn-close-apilogs" class="modal-close-btn">&times;</button>
+      </div>
+
+      <div class="apilogs-modal-body">
+        <!-- Thanh công cụ lọc & tìm kiếm -->
+        <div class="apilogs-toolbar">
+          <div class="apilogs-toolbar-left">
+            <input type="text" id="apilogs-search-input" class="apilogs-search" placeholder="🔍 Tìm theo URL API, Frame URL, Phương thức, Payload..." autocomplete="off">
+            <select id="apilogs-sub-filter" class="apilogs-sub-select">
+              <option value="all">Tất cả Tab / Subdomain</option>
+            </select>
+          </div>
+          <div class="apilogs-toolbar-right">
+            <label style="display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: #475569; cursor: pointer;">
+              <input type="checkbox" id="apilogs-auto-refresh" checked> Tự động nạp
+            </label>
+            <button type="button" id="btn-apilogs-refresh" class="btn btn-outline" style="height: 30px; font-size: 12px; padding: 0 10px;">
+              🔄 Làm mới
+            </button>
+            <button type="button" id="btn-apilogs-clear" class="btn btn-outline" style="height: 30px; font-size: 12px; padding: 0 10px; color: #dc2626; border-color: #fca5a5;">
+              🗑️ Xóa log
+            </button>
+          </div>
+        </div>
+
+        <!-- Danh sách API Logs -->
+        <div id="apilogs-list" class="apilogs-list">
+          <!-- Render động danh sách API calls ở đây -->
+        </div>
+      </div>
+
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-size: 12px; color: #64748b;">
+          Đang hiển thị <span id="apilogs-shown-count" style="font-weight: 700; color: #0284c7;">0</span> / <span id="apilogs-total-count" style="font-weight: 700;">0</span> lượt gọi API
+        </div>
+        <button type="button" id="btn-close-apilogs-footer" class="btn btn-outline">Đóng</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast thông báo -->
+  <div id="toast"></div>
+
+  <script>
+    // --- QUẢN LÝ DANH SÁCH TAB & PHIÊN LÀM VIỆC ---
+    let tabs = [];
+    let activeTabId = null;
+    let tabCounter = 1;
+    let accountsList = [];
+    let isBusy = false;
+
+    // Trạng thái tìm kiếm & chỉnh sửa tài khoản
+    let currentSelectedAccountId = null;
+    let dropdownSearchQuery = '';
+    let focusedItemIndex = -1;
+    let editingAccountId = null;
+    let modalAccountFilter = '';
+
+    // DOM Elements
+    const topHeader = document.getElementById('top-header');
+    const expandTrigger = document.getElementById('expand-trigger');
+    const tabsList = document.getElementById('tabs-list');
+    const frameContainer = document.getElementById('frame-container');
+    const loadingBar = document.getElementById('loading-bar');
+    const toastEl = document.getElementById('toast');
+
+    // Searchable Account Dropdown Elements (Header)
+    const accountDropdownWrapper = document.getElementById('account-dropdown-wrapper');
+    const accountDropdownTrigger = document.getElementById('account-dropdown-trigger');
+    const accountDropdownLabel = document.getElementById('account-dropdown-label');
+    const accountDropdownMenu = document.getElementById('account-dropdown-menu');
+    const accountSearchInput = document.getElementById('account-search-input');
+    const accountSearchClear = document.getElementById('account-search-clear');
+    const accountItemsList = document.getElementById('account-items-list');
+    const accountDropdownCount = document.getElementById('account-dropdown-count');
+    const btnDropdownManage = document.getElementById('btn-dropdown-manage');
+
+    const savedAccountsSelect = document.getElementById('saved-accounts-select');
+    const inputUsername = document.getElementById('input-username');
+    const inputPassword = document.getElementById('input-password');
+    const btnTogglePass = document.getElementById('btn-toggle-pass');
+    const btnLoginCurrent = document.getElementById('btn-login-current');
+    const btnAddTabHeader = document.getElementById('btn-add-tab-header');
+    const btnSaveCurrent = document.getElementById('btn-save-current');
+    const loginText = document.getElementById('login-text');
+    const loginIcon = document.getElementById('login-icon');
+
+    const sessionBadge = document.getElementById('session-badge');
+    const sessionDot = document.getElementById('session-dot');
+    const sessionName = document.getElementById('session-name');
+    const quickRouteSelect = document.getElementById('quick-route-select');
+
+    const btnReloadFrame = document.getElementById('btn-reload-frame');
+    const btnToggleBottomBar = document.getElementById('btn-toggle-bottom-bar');
+    const btnCollapseHeader = document.getElementById('btn-collapse-header');
+    const btnNewTabDialog = document.getElementById('btn-new-tab-dialog');
+    const btnOpenBrowserTab = document.getElementById('btn-open-browser-tab');
+    const btnOpenKskTab = document.getElementById('btn-open-ksk-tab');
+    const btnOpenExcelTab = document.getElementById('btn-open-excel-tab');
+    const btnOpenCanhbaoTab = document.getElementById('btn-open-canhbao-tab');
+
+    // Bottom Bar Elements
+    const bottomBar = document.getElementById('bottom-bar');
+    const bottomTabBadge = document.getElementById('bottom-tab-badge');
+    const bottomTabTitle = document.getElementById('bottom-tab-title');
+    const bottomFrameUrl = document.getElementById('bottom-frame-url');
+    const btnBottomNavigate = document.getElementById('btn-bottom-navigate');
+    const btnBottomCopy = document.getElementById('btn-bottom-copy');
+    const btnBottomOpenTab = document.getElementById('btn-bottom-open-tab');
+    const btnBottomReload = document.getElementById('btn-bottom-reload');
+    const btnBottomHide = document.getElementById('btn-bottom-hide');
+    const btnShowBottomBar = document.getElementById('btn-show-bottom-bar');
+
+    // Modals
+    const accountsModal = document.getElementById('accounts-modal');
+    const btnOpenModal = document.getElementById('btn-open-modal');
+    const btnCloseModal = document.getElementById('btn-close-modal');
+    const modalBtnClose = document.getElementById('modal-btn-close');
+    const modalAccountRows = document.getElementById('modal-account-rows');
+    const modalAccountCount = document.getElementById('modal-account-count');
+    const modalAccountFilterInput = document.getElementById('modal-account-filter-input');
+    const modalAccountFilterClear = document.getElementById('modal-account-filter-clear');
+    const modalBtnAdd = document.getElementById('modal-btn-add');
+    const modalNewName = document.getElementById('modal-new-name');
+    const modalNewUser = document.getElementById('modal-new-user');
+    const modalNewPass = document.getElementById('modal-new-pass');
+    const modalNewRegion = document.getElementById('modal-new-region');
+    const modalBtnExport = document.getElementById('modal-btn-export');
+    const modalBtnImport = document.getElementById('modal-btn-import');
+    const modalFileImport = document.getElementById('modal-file-import');
+
+    const newTabModal = document.getElementById('new-tab-modal');
+    const btnCloseNewTabModal = document.getElementById('btn-close-new-tab-modal');
+    const btnCancelNewTab = document.getElementById('btn-cancel-new-tab');
+    const btnConfirmCreateTab = document.getElementById('btn-confirm-create-tab');
+    const btnOpenAsBrowserTab = document.getElementById('btn-open-as-browser-tab');
+    const newTabAccountSelect = document.getElementById('new-tab-account-select');
+    const newTabUsername = document.getElementById('new-tab-username');
+    const newTabPassword = document.getElementById('new-tab-password');
+    const newTabRoute = document.getElementById('new-tab-route');
+
+    function showToast(message, type = 'info') {
+      toastEl.textContent = message;
+      toastEl.className = 'show ' + type;
+      setTimeout(() => { toastEl.className = ''; }, 3500);
+    }
+
+    btnTogglePass.addEventListener('click', () => {
+      if (inputPassword.type === 'password') {
+        inputPassword.type = 'text';
+        btnTogglePass.textContent = '🔒';
+      } else {
+        inputPassword.type = 'password';
+        btnTogglePass.textContent = '👁️';
+      }
+    });
+
+    btnCollapseHeader.addEventListener('click', () => {
+      topHeader.classList.add('collapsed');
+      expandTrigger.style.display = 'block';
+      showToast('Đã thu gọn thanh header. Nhấn nút góc trên để hiện lại.', 'info');
+    });
+
+    expandTrigger.addEventListener('click', () => {
+      topHeader.classList.remove('collapsed');
+      expandTrigger.style.display = 'none';
+    });
+
+    function setLoading(loading) {
+      isBusy = loading;
+      if (loading) {
+        loadingBar.style.display = 'block';
+        loginIcon.innerHTML = '<span class="spinner"></span>';
+        loginText.textContent = 'Đang nạp...';
+        btnLoginCurrent.disabled = true;
+        btnAddTabHeader.disabled = true;
+      } else {
+        loadingBar.style.display = 'none';
+        loginIcon.innerHTML = '⚡';
+        loginText.textContent = 'Đăng nhập';
+        btnLoginCurrent.disabled = false;
+        btnAddTabHeader.disabled = false;
+      }
+    }
+
+    // --- BỘ LỌC TÌM KIẾM KHÔNG DẤU TIẾNG VIỆT ---
+    function removeVietnameseTones(str) {
+      if (!str) return '';
+      str = str.toLowerCase();
+      str = str.replace(/à|á|ạ|ả|ã|â|ầ|ấ|ậ|ẩ|ẫ|ă|ằ|ắ|ặ|ẳ|ẵ/g, "a");
+      str = str.replace(/è|é|ẹ|ẻ|ẽ|ê|ề|ế|ệ|ể|ễ/g, "e");
+      str = str.replace(/ì|í|ị|ỉ|ĩ/g, "i");
+      str = str.replace(/ò|ó|ọ|ỏ|õ|ô|ồ|ố|ộ|ổ|ỗ|ơ|ờ|ớ|ợ|ở|ỡ/g, "o");
+      str = str.replace(/ù|ú|ụ|ủ|ũ|ư|ừ|ứ|ự|ử|ữ/g, "u");
+      str = str.replace(/ỳ|ý|ỵ|ỷ|ỹ/g, "y");
+      str = str.replace(/đ/g, "d");
+      str = str.replace(/\u0300|\u0301|\u0303|\u0309|\u0323/g, "");
+      str = str.replace(/\u02C6|\u0306|\u031B/g, "");
+      return str.trim();
+    }
+
+    // --- QUẢN LÝ TÀI KHOẢN ---
+    async function loadAccounts() {
+      try {
+        const res = await fetch('/_mgr/accounts');
+        if (res.ok) {
+          accountsList = await res.json();
+          renderAccountsUI();
+        }
+      } catch (err) {
+        console.error('Lỗi tải danh sách tài khoản:', err);
+      }
+    }
+
+    async function saveAccountsToServer() {
+      try {
+        await fetch('/_mgr/accounts', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(accountsList)
+        });
+        renderAccountsUI();
+      } catch (err) {
+        console.error('Lỗi lưu danh sách tài khoản:', err);
+      }
+    }
+
+    function updateDropdownLabel(acc) {
+      if (!accountDropdownLabel) return;
+      if (!acc) {
+        accountDropdownLabel.textContent = '-- Danh sách tài khoản --';
+        accountDropdownTrigger.title = 'Chọn nhanh tài khoản đã lưu';
+        return;
+      }
+      const title = acc.name || acc.username;
+      accountDropdownLabel.textContent = `${title} (${acc.username})`;
+      accountDropdownTrigger.title = `Tài khoản đang chọn: ${title} (${acc.username})`;
+    }
+
+    // Render danh sách tài khoản trong Combobox Header (Có ô tìm kiếm)
+    function renderSearchableDropdownList() {
+      if (!accountItemsList) return;
+      const q = removeVietnameseTones(dropdownSearchQuery);
+
+      const filtered = accountsList.filter(acc => {
+        if (!q) return true;
+        const n = removeVietnameseTones(acc.name || '');
+        const u = removeVietnameseTones(acc.username || '');
+        return n.includes(q) || u.includes(q);
+      });
+
+      if (accountDropdownCount) {
+        accountDropdownCount.textContent = q 
+          ? `${filtered.length} / ${accountsList.length} tài khoản` 
+          : `${accountsList.length} tài khoản`;
+      }
+
+      accountItemsList.innerHTML = '';
+      if (filtered.length === 0) {
+        accountItemsList.innerHTML = '<div class="account-item-empty">🔍 Không tìm thấy tài khoản phù hợp</div>';
+        return;
+      }
+
+      filtered.forEach((acc, index) => {
+        const item = document.createElement('div');
+        const isSelected = acc.id === currentSelectedAccountId;
+        item.className = 'account-item' + (isSelected ? ' selected' : '');
+        item.dataset.id = acc.id;
+        item.dataset.index = index;
+
+        item.innerHTML = `
+          <div class="account-item-info">
+            <div class="account-item-title">${escapeHtml(acc.name || acc.username)}</div>
+            <div class="account-item-sub">👤 ${escapeHtml(acc.username)}</div>
+          </div>
+          <div class="account-item-actions">
+            <button type="button" class="btn-mini-acc login" title="Đăng nhập tài khoản này vào Tab hiện tại">⚡ Login</button>
+            <button type="button" class="btn-mini-acc newtab" title="Mở thành Tab làm việc mới">➕ Tab</button>
+          </div>
+        `;
+
+        // Click trên cả item để chọn tài khoản
+        item.addEventListener('click', () => {
+          fillForm(acc.id);
+          closeAccountDropdown();
+        });
+
+        // Click nút mini login
+        const btnLogin = item.querySelector('.btn-mini-acc.login');
+        if (btnLogin) {
+          btnLogin.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAccountDropdown();
+            actionLoginAccount(acc.id);
+          });
+        }
+
+        // Click nút mini newtab
+        const btnNewtab = item.querySelector('.btn-mini-acc.newtab');
+        if (btnNewtab) {
+          btnNewtab.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeAccountDropdown();
+            actionOpenNewTabAccount(acc.id);
+          });
+        }
+
+        accountItemsList.appendChild(item);
+      });
+    }
+
+    function openAccountDropdown() {
+      if (!accountDropdownMenu) return;
+      accountDropdownMenu.classList.add('open');
+      accountDropdownTrigger.classList.add('open');
+      accountSearchInput.value = dropdownSearchQuery;
+      accountSearchClear.style.display = dropdownSearchQuery ? 'block' : 'none';
+      focusedItemIndex = -1;
+      renderSearchableDropdownList();
+      setTimeout(() => {
+        accountSearchInput.focus();
+        accountSearchInput.select();
+      }, 50);
+    }
+
+    function closeAccountDropdown() {
+      if (!accountDropdownMenu) return;
+      accountDropdownMenu.classList.remove('open');
+      accountDropdownTrigger.classList.remove('open');
+      focusedItemIndex = -1;
+    }
+
+    function toggleAccountDropdown() {
+      if (accountDropdownMenu.classList.contains('open')) {
+        closeAccountDropdown();
+      } else {
+        openAccountDropdown();
+      }
+    }
+
+    // Render bảng Quản lý tài khoản trong Modal (Hỗ trợ sửa Tên gợi nhớ)
+    function renderModalTable() {
+      if (!modalAccountRows) return;
+      const q = removeVietnameseTones(modalAccountFilter);
+
+      const filtered = accountsList.filter(acc => {
+        if (!q) return true;
+        const n = removeVietnameseTones(acc.name || '');
+        const u = removeVietnameseTones(acc.username || '');
+        return n.includes(q) || u.includes(q);
+      });
+
+      if (modalAccountCount) {
+        modalAccountCount.textContent = q 
+          ? `${filtered.length} / ${accountsList.length}` 
+          : `${accountsList.length}`;
+      }
+
+      modalAccountRows.innerHTML = '';
+      if (filtered.length === 0) {
+        modalAccountRows.innerHTML = `<tr><td colspan="3" style="text-align:center; color:#9ca3af; padding:16px;">
+          ${accountsList.length === 0 ? 'Chưa có tài khoản nào được lưu.' : '🔍 Không tìm thấy tài khoản nào khớp với từ khoá.'}
+        </td></tr>`;
+        return;
+      }
+
+      filtered.forEach(acc => {
+        const tr = document.createElement('tr');
+        const isEditing = editingAccountId === acc.id;
+
+        if (isEditing) {
+          tr.style.background = '#eff6ff';
+          tr.innerHTML = `
+            <td>
+              <div style="display:flex; flex-direction:column; gap:4px;">
+                <input type="text" id="edit-name-${acc.id}" class="form-control" value="${escapeHtml(acc.name || '')}" placeholder="Nhập tên gợi nhớ mới..." style="height:28px; font-size:12.5px; font-weight:600; padding:2px 8px; border-color:#3b82f6;">
+                <span style="font-size:11px; color:#64748b;">(Nhấn Enter để Lưu, Esc để Huỷ)</span>
+              </div>
+            </td>
+            <td>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <code>${escapeHtml(acc.username)}</code>
+              </div>
+            </td>
+            <td style="white-space:nowrap;">
+              <button type="button" class="btn btn-primary" style="height:26px; padding:0 10px; font-size:11px; font-weight:600;" onclick="saveEditAccount('${acc.id}')">💾 Lưu</button>
+              <button type="button" class="btn btn-outline" style="height:26px; padding:0 8px; font-size:11px; margin-left:4px;" onclick="cancelEditAccount()">Huỷ</button>
+            </td>
+          `;
+        } else {
+          tr.innerHTML = `
+            <td>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <strong style="cursor:pointer; color:#1e293b;" onclick="startEditAccount('${acc.id}')" title="Nhấn để sửa tên gợi nhớ">${escapeHtml(acc.name || 'Không tên')}</strong>
+                <button type="button" onclick="startEditAccount('${acc.id}')" title="Sửa tên gợi nhớ" style="background:none; border:none; cursor:pointer; opacity:0.6; font-size:12px; padding:0 2px;">✏️</button>
+              </div>
+            </td>
+            <td><code>${escapeHtml(acc.username)}</code></td>
+            <td style="white-space:nowrap;">
+              <button type="button" class="btn btn-outline" style="height:26px; padding:0 6px; font-size:11px; color:#2563eb; border-color:#bfdbfe;" onclick="startEditAccount('${acc.id}')" title="Sửa tên gợi nhớ">✏️ Sửa</button>
+              <button type="button" class="btn btn-primary" style="height:26px; padding:0 8px; font-size:11px;" onclick="actionLoginAccount('${acc.id}')">Đăng nhập</button>
+              <button type="button" class="btn btn-success" style="height:26px; padding:0 8px; font-size:11px;" onclick="actionOpenNewTabAccount('${acc.id}')">+ Tab mới</button>
+              <button type="button" class="btn btn-outline" style="height:26px; padding:0 8px; font-size:11px;" onclick="fillForm('${acc.id}')">Chọn</button>
+              <button type="button" class="btn btn-outline" style="height:26px; padding:0 8px; font-size:11px; color:#ef4444;" onclick="deleteAccount('${acc.id}')">Xoá</button>
+            </td>
+          `;
+        }
+
+        modalAccountRows.appendChild(tr);
+      });
+    }
+
+    window.startEditAccount = function(accId) {
+      editingAccountId = accId;
+      renderModalTable();
+      setTimeout(() => {
+        const inp = document.getElementById(`edit-name-${accId}`);
+        if (inp) {
+          inp.focus();
+          inp.select();
+          inp.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') saveEditAccount(accId);
+            if (e.key === 'Escape') cancelEditAccount();
+          });
+        }
+      }, 50);
+    };
+
+    window.cancelEditAccount = function() {
+      editingAccountId = null;
+      renderModalTable();
+    };
+
+    window.saveEditAccount = async function(accId) {
+      const acc = accountsList.find(a => a.id === accId);
+      if (!acc) return;
+      const inp = document.getElementById(`edit-name-${accId}`);
+      const newName = inp ? inp.value.trim() : '';
+      if (!newName) {
+        showToast('Tên gợi nhớ không được để trống!', 'error');
+        if (inp) inp.focus();
+        return;
+      }
+      acc.name = newName;
+      editingAccountId = null;
+      await saveAccountsToServer();
+      showToast(`Đã đổi tên gợi nhớ thành "${acc.name}"!`, 'success');
+    };
+
+    function renderAccountsUI() {
+      // 1. Cập nhật hidden select và select ở modal tạo tab mới
+      savedAccountsSelect.innerHTML = '<option value="">-- Danh sách tài khoản (' + accountsList.length + ') --</option>';
+      newTabAccountSelect.innerHTML = '<option value="">-- Chọn tài khoản đã lưu --</option>';
+
+      accountsList.forEach(acc => {
+        const text = `${acc.name || acc.username} (${acc.username})`;
+        const opt = document.createElement('option');
+        opt.value = acc.id;
+        opt.textContent = text;
+        savedAccountsSelect.appendChild(opt);
+
+        const opt2 = document.createElement('option');
+        opt2.value = acc.id;
+        opt2.textContent = text;
+        newTabAccountSelect.appendChild(opt2);
+      });
+
+      // 2. Cập nhật nhãn tài khoản đang chọn
+      let selectedAcc = accountsList.find(a => a.id === currentSelectedAccountId);
+      if (!selectedAcc && accountsList.length > 0) {
+        selectedAcc = accountsList[0];
+        currentSelectedAccountId = selectedAcc.id;
+      }
+      updateDropdownLabel(selectedAcc);
+
+      // 3. Render danh sách dropdown có ô tìm kiếm
+      renderSearchableDropdownList();
+
+      // 4. Render danh sách bảng trong modal quản trị (hỗ trợ sửa tên gợi nhớ)
+      renderModalTable();
+
+      if (!inputUsername.value && selectedAcc) {
+        fillForm(selectedAcc.id);
+      }
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    window.fillForm = function(accId) {
+      const acc = accountsList.find(a => a.id === accId);
+      if (acc) {
+        currentSelectedAccountId = acc.id;
+        inputUsername.value = acc.username;
+        inputPassword.value = acc.password;
+        savedAccountsSelect.value = acc.id;
+        if (newTabAccountSelect) newTabAccountSelect.value = acc.id;
+        updateDropdownLabel(acc);
+        renderSearchableDropdownList();
+      }
+    };
+
+    savedAccountsSelect.addEventListener('change', (e) => {
+      const id = e.target.value;
+      if (id) fillForm(id);
+    });
+
+    // Lắng nghe sự kiện click/input cho Searchable Dropdown
+    if (accountDropdownTrigger) {
+      accountDropdownTrigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleAccountDropdown();
+      });
+    }
+
+    if (accountSearchInput) {
+      accountSearchInput.addEventListener('input', (e) => {
+        dropdownSearchQuery = e.target.value;
+        if (accountSearchClear) {
+          accountSearchClear.style.display = dropdownSearchQuery ? 'block' : 'none';
+        }
+        focusedItemIndex = -1;
+        renderSearchableDropdownList();
+      });
+
+      accountSearchInput.addEventListener('keydown', (e) => {
+        if (!accountItemsList) return;
+        const items = accountItemsList.querySelectorAll('.account-item');
+        if (items.length === 0) {
+          if (e.key === 'Escape') closeAccountDropdown();
+          return;
+        }
+
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          focusedItemIndex = Math.min(focusedItemIndex + 1, items.length - 1);
+          updateItemFocus(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          focusedItemIndex = Math.max(focusedItemIndex - 1, 0);
+          updateItemFocus(items);
+        } else if (e.key === 'Enter') {
+          e.preventDefault();
+          const targetIndex = focusedItemIndex >= 0 ? focusedItemIndex : 0;
+          if (items[targetIndex]) {
+            const accId = items[targetIndex].dataset.id;
+            fillForm(accId);
+            closeAccountDropdown();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          closeAccountDropdown();
+        }
+      });
+    }
+
+    function updateItemFocus(items) {
+      items.forEach((it, idx) => {
+        if (idx === focusedItemIndex) {
+          it.classList.add('keyboard-focus');
+          it.scrollIntoView({ block: 'nearest' });
+        } else {
+          it.classList.remove('keyboard-focus');
+        }
+      });
+    }
+
+    if (accountSearchClear) {
+      accountSearchClear.addEventListener('click', (e) => {
+        e.stopPropagation();
+        accountSearchInput.value = '';
+        dropdownSearchQuery = '';
+        accountSearchClear.style.display = 'none';
+        focusedItemIndex = -1;
+        renderSearchableDropdownList();
+        accountSearchInput.focus();
+      });
+    }
+
+    // Đóng dropdown khi click ra ngoài
+    document.addEventListener('click', (e) => {
+      if (accountDropdownWrapper && !accountDropdownWrapper.contains(e.target)) {
+        closeAccountDropdown();
+      }
+    });
+
+    if (btnDropdownManage) {
+      btnDropdownManage.addEventListener('click', (e) => {
+        e.stopPropagation();
+        closeAccountDropdown();
+        openAccountsModal();
+      });
+    }
+
+    // Lắng nghe sự kiện lọc tài khoản trong Modal
+    if (modalAccountFilterInput) {
+      modalAccountFilterInput.addEventListener('input', (e) => {
+        modalAccountFilter = e.target.value;
+        if (modalAccountFilterClear) {
+          modalAccountFilterClear.style.display = modalAccountFilter ? 'block' : 'none';
+        }
+        renderModalTable();
+      });
+    }
+
+    if (modalAccountFilterClear) {
+      modalAccountFilterClear.addEventListener('click', () => {
+        modalAccountFilterInput.value = '';
+        modalAccountFilter = '';
+        modalAccountFilterClear.style.display = 'none';
+        renderModalTable();
+        modalAccountFilterInput.focus();
+      });
+    }
+
+    window.actionLoginAccount = function(accId) {
+      fillForm(accId);
+      closeAccountsModal();
+      handleLoginCurrentTab();
+    };
+
+    window.actionOpenNewTabAccount = function(accId) {
+      const acc = accountsList.find(a => a.id === accId);
+      if (acc) {
+        closeAccountsModal();
+        createNewTabWithAuth(acc.username, acc.password, acc.regionCode || 'region2', quickRouteSelect.value, acc.name);
+      }
+    };
+
+    window.deleteAccount = function(accId) {
+      const acc = accountsList.find(a => a.id === accId);
+      if (confirm(`Bạn có chắc muốn xoá tài khoản ${acc?.name || acc?.username}?`)) {
+        accountsList = accountsList.filter(a => a.id !== accId);
+        saveAccountsToServer();
+        showToast('Đã xoá tài khoản.', 'info');
+      }
+    };
+
+    modalBtnAdd.addEventListener('click', () => {
+      const name = modalNewName.value.trim();
+      const user = modalNewUser.value.trim();
+      const pass = modalNewPass.value.trim();
+      const region = modalNewRegion.value.trim() || 'region2';
+
+      if (!user || !pass) {
+        alert('Vui lòng nhập Tên tài khoản và Mật khẩu!');
+        return;
+      }
+
+      accountsList.push({
+        id: 'acc-' + Date.now(),
+        name: name || user,
+        username: user,
+        password: pass,
+        regionCode: region
+      });
+      saveAccountsToServer();
+
+      modalNewName.value = '';
+      modalNewUser.value = '';
+      modalNewPass.value = '';
+      showToast('Đã thêm tài khoản thành công!', 'success');
+    });
+
+    btnSaveCurrent.addEventListener('click', () => {
+      const user = inputUsername.value.trim();
+      const pass = inputPassword.value.trim();
+      if (!user || !pass) {
+        showToast('Vui lòng nhập tài khoản và mật khẩu trước khi lưu!', 'error');
+        return;
+      }
+
+      const existing = accountsList.find(a => a.username === user);
+      if (existing) {
+        existing.password = pass;
+        saveAccountsToServer();
+        showToast(`Đã cập nhật mật khẩu cho ${user}!`, 'success');
+      } else {
+        const name = prompt('Nhập tên gợi nhớ (ví dụ: Điểm trạm Linh Sơn):', user);
+        accountsList.push({
+          id: 'acc-' + Date.now(),
+          name: name || user,
+          username: user,
+          password: pass,
+          regionCode: 'region2'
+        });
+        saveAccountsToServer();
+        showToast(`Đã lưu tài khoản ${user} vào danh sách!`, 'success');
+      }
+    });
+
+    // --- QUẢN LÝ ĐA TAB (IN-APP TABS) ---
+    function renderTabsBar() {
+      tabsList.innerHTML = '';
+      tabs.forEach(tab => {
+        const item = document.createElement('div');
+        item.className = 'tab-item' + (tab.id === activeTabId ? ' active' : '');
+        item.dataset.tabId = tab.id;
+
+        const tabIcon = tab.type === 'canh-bao' || tab.route?.includes('canh-bao') ? '⚠️' :
+                        tab.type === 'ksk' || tab.route?.includes('lien-thong') ? '🛠️' :
+                        tab.type === 'excel' || tab.route?.includes('excel') ? '📊' : '🏥';
+
+        item.innerHTML = `
+          <span class="tab-icon">${tabIcon}</span>
+          <span class="tab-title" title="${escapeHtml(tab.title)} (Double-click để đổi tên)">${escapeHtml(tab.title)}</span>
+          <span class="tab-close" title="Đóng tab" onclick="event.stopPropagation(); closeTab('${tab.id}')">&times;</span>
+        `;
+
+        item.addEventListener('click', () => switchTab(tab.id));
+        item.addEventListener('dblclick', () => renameTab(tab.id));
+        tabsList.appendChild(item);
+      });
+
+      // Ẩn/Hiện iframes tương ứng với activeTabId
+      let hasActiveFrame = false;
+      const iframes = frameContainer.querySelectorAll('.tab-frame');
+      iframes.forEach(iframe => {
+        if (iframe.id === 'frame-' + activeTabId) {
+          iframe.classList.add('active');
+          iframe.style.display = 'block';
+          hasActiveFrame = true;
+        } else {
+          iframe.classList.remove('active');
+          iframe.style.display = 'none';
+        }
+      });
+
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (!hasActiveFrame && activeTab) {
+        const newFrame = createTabIframe(activeTab.id, activeTab.subdomain, activeTab.sid, activeTab.route, activeTab.account?.accessToken || '');
+        newFrame.classList.add('active');
+        newFrame.style.display = 'block';
+      }
+
+      // Cập nhật session badge trên header
+      updateSessionBadge(activeTab?.account);
+      updateBottomUrlBar();
+    }
+
+    function switchTab(tabId) {
+      const targetTab = tabs.find(t => t.id === tabId);
+      if (!targetTab) return;
+
+      activeTabId = tabId;
+      renderTabsBar();
+
+      // Đảm bảo ẩn TẤT CẢ các frame khác và CHỈ hiển thị duy nhất frame của tabId
+      let targetFrameFound = false;
+      const iframes = frameContainer.querySelectorAll('.tab-frame');
+      iframes.forEach(iframe => {
+        if (iframe.id === 'frame-' + tabId) {
+          iframe.classList.add('active');
+          iframe.style.display = 'block';
+          targetFrameFound = true;
+        } else {
+          iframe.classList.remove('active');
+          iframe.style.display = 'none';
+        }
+      });
+
+      // Nếu DOM chưa có iframe cho tab này (hoặc bị mất), tự động tạo ngay
+      if (!targetFrameFound) {
+        const newFrame = createTabIframe(targetTab.id, targetTab.subdomain, targetTab.sid, targetTab.route, targetTab.account?.accessToken || '');
+        newFrame.classList.add('active');
+        newFrame.style.display = 'block';
+      }
+
+      if (quickRouteSelect && targetTab.route) {
+        const matchedOption = Array.from(quickRouteSelect.options).find(opt => opt.value && opt.value !== '/new/his/chon-khoaphong' && targetTab.route.startsWith(opt.value));
+        if (matchedOption) {
+          quickRouteSelect.value = matchedOption.value;
+        }
+      }
+
+      updateBottomUrlBar();
+    }
+
+    function renameTab(tabId) {
+      const tab = tabs.find(t => t.id === tabId);
+      if (!tab) return;
+      const newName = prompt('Nhập tên gợi nhớ mới cho tab:', tab.title);
+      if (newName && newName.trim()) {
+        tab.title = newName.trim();
+        renderTabsBar();
+        showToast('Đã đổi tên tab.', 'info');
+      }
+    }
+
+    function closeTab(tabId) {
+      if (tabs.length <= 1) {
+        showToast('Không thể đóng tab cuối cùng!', 'warning');
+        return;
+      }
+
+      const idx = tabs.findIndex(t => t.id === tabId);
+      if (idx === -1) return;
+
+      // Xoá iframe
+      const iframe = document.getElementById('frame-' + tabId);
+      if (iframe) iframe.remove();
+
+      tabs.splice(idx, 1);
+
+      if (activeTabId === tabId) {
+        const nextActive = tabs[Math.max(0, idx - 1)];
+        activeTabId = nextActive.id;
+      }
+
+      renderTabsBar();
+      showToast('Đã đóng tab.', 'info');
+    }
+
+    function updateSessionBadge(acc) {
+      if (acc && acc.fullName) {
+        sessionBadge.className = 'user-status-pill';
+        sessionDot.className = 'status-dot';
+        const room = acc.phongName ? ` (${acc.phongName})` : '';
+        sessionName.textContent = `${acc.fullName} | ${acc.companyName}${room}`;
+        sessionBadge.title = `Tài khoản: ${acc.username}\nĐơn vị: ${acc.companyName}\nPhòng: ${acc.phongName || 'Chưa chọn'}`;
+      } else {
+        sessionBadge.className = 'user-status-pill offline';
+        sessionDot.className = 'status-dot offline';
+        sessionName.textContent = 'Chưa kết nối';
+        sessionBadge.title = 'Tab chưa có phiên đăng nhập';
+      }
+    }
+
+    // Helper: Xác định domain của Tab (Tương thích cả localhost đa subdomain và tên miền online công khai)
+    function getTabOrigin(subdomain) {
+      const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+      if (isLocalhost) {
+        const port = window.location.port ? `:${window.location.port}` : ':8888';
+        return `${window.location.protocol}//${subdomain}.localhost${port}`;
+      }
+      return window.location.origin;
+    }
+
+    // Tạo iframe mới cho 1 Tab và nạp session
+    function createTabIframe(tabId, subdomain, sessionId, route, token = '') {
+      const iframe = document.createElement('iframe');
+      iframe.id = 'frame-' + tabId;
+      iframe.name = tabId;
+      iframe.className = 'tab-frame';
+      iframe.allow = 'clipboard-read; clipboard-write; fullscreen';
+
+      if (route === '/lien-thong-ksk' || route.startsWith('/lien-thong-ksk')) {
+        const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+        iframe.src = `/lien-thong-ksk${tokenQuery}`;
+      } else if (route === '/excel-tool' || route.startsWith('/excel-tool')) {
+        iframe.src = '/excel-tool';
+      } else if (route === '/canh-bao' || route.startsWith('/canh-bao')) {
+        const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+        iframe.src = `/canh-bao${tokenQuery}`;
+      } else {
+        // Nạp phiên làm việc qua route /init-session trên subdomain độc lập (hoặc origin hiện tại)
+        const targetOrigin = getTabOrigin(subdomain);
+        const url = `${targetOrigin}/init-session?sid=${encodeURIComponent(sessionId)}&route=${encodeURIComponent(route)}&_t=${Date.now()}`;
+        iframe.src = url;
+      }
+
+      iframe.addEventListener('load', () => {
+        updateBottomUrlBar();
+      });
+
+      frameContainer.appendChild(iframe);
+      return iframe;
+    }
+
+    // Hàm gọi backend đăng nhập, tự động lấy khoa phòng & tạo phiên
+    async function requestBackendLogin(username, password, regionCode = 'region2', targetRoute = '/new/his/ngoaitru/tnkb/tiepnhan') {
+      const res = await fetch('/_mgr/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password, regionCode, targetRoute })
+      });
+
+      const result = await res.json();
+      if (!result.success || !result.sessionId) {
+        throw new Error(result.message || 'Đăng nhập không thành công');
+      }
+      return result;
+    }
+
+    // Đăng nhập và cập nhật Tab HIỆN TẠI
+    async function handleLoginCurrentTab() {
+      if (isBusy) return;
+      const username = inputUsername.value.trim();
+      const password = inputPassword.value.trim();
+
+      if (!username || !password) {
+        showToast('Vui lòng nhập tài khoản và mật khẩu!', 'error');
+        return;
+      }
+
+      setLoading(true);
+      try {
+        let route = quickRouteSelect.value;
+        if (route === '/new/his/chon-khoaphong') route = '/new/his/ngoaitru/tnkb/tiepnhan';
+
+        const loginRes = await requestBackendLogin(username, password, 'region2', route);
+        const data = loginRes.data;
+        const sessionId = loginRes.sessionId;
+
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (!currentTab) return;
+
+        // Cập nhật thông tin tab
+        const defaultKhoa = data.defaultKhoa;
+        const defaultPhong = data.defaultPhong;
+        const userInfo = data.userInfo;
+        const titleName = defaultKhoa?.name || userInfo?.fullName || username;
+
+        // Nếu tab này trước đó là tab công cụ đặc biệt (canh-bao, ksk, excel) nhưng người dùng đăng nhập tài khoản HIS vào đây:
+        // Đổi ID tab thành ID chuẩn 'tab_...' để không bị nhận nhầm là tab công cụ nữa!
+        if (currentTab.id.startsWith('tab_canhbao_') || currentTab.id.startsWith('tab_ksk_') || currentTab.id.startsWith('tab_excel_') || currentTab.type) {
+          const oldId = currentTab.id;
+          const freshId = 'tab_' + Date.now();
+          currentTab.id = freshId;
+          delete currentTab.type;
+          const oldIframe = document.getElementById('frame-' + oldId);
+          if (oldIframe) {
+            oldIframe.id = 'frame-' + freshId;
+            oldIframe.name = freshId;
+          }
+          activeTabId = freshId;
+        }
+
+        currentTab.title = titleName;
+        currentTab.account = {
+          username: username,
+          fullName: userInfo?.fullName || username,
+          companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+          phongName: defaultPhong?.name || '',
+          expiredTime: data.expiredTime,
+          accessToken: data.accessToken
+        };
+        currentTab.sid = sessionId;
+        currentTab.route = route;
+
+        // Tải lại iframe của tab hiện tại với session mới
+        const iframe = document.getElementById('frame-' + currentTab.id);
+        if (iframe) {
+          if (route === '/lien-thong-ksk' || route.startsWith('/lien-thong-ksk')) {
+            iframe.src = `/lien-thong-ksk?token=${encodeURIComponent(data.accessToken)}`;
+          } else if (route === '/excel-tool' || route.startsWith('/excel-tool')) {
+            iframe.src = '/excel-tool';
+          } else if (route === '/canh-bao' || route.startsWith('/canh-bao')) {
+            iframe.src = `/canh-bao?token=${encodeURIComponent(data.accessToken)}`;
+          } else {
+            const targetOrigin = getTabOrigin(currentTab.subdomain);
+            iframe.src = `${targetOrigin}/init-session?sid=${encodeURIComponent(sessionId)}&route=${encodeURIComponent(route)}&_t=${Date.now()}`;
+          }
+        }
+
+        // Đồng bộ token sang mọi tab Liên thông KSK & Cảnh báo đang mở
+        const kskIframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"]');
+        kskIframes.forEach(f => {
+          try {
+            f.contentWindow.postMessage({ type: 'SET_TOKEN', token: data.accessToken, username: username }, '*');
+          } catch(e) {}
+        });
+
+        renderTabsBar();
+        showToast(`Đã nạp thành công: ${currentTab.account.fullName} (${currentTab.account.companyName})`, 'success');
+      } catch (err) {
+        console.error('Lỗi nạp phiên:', err);
+        showToast(err.message || 'Lỗi kết nối máy chủ', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Tạo một Tab MỚI hoàn chỉnh
+    async function createNewTabWithAuth(username, password, regionCode = 'region2', route = '/new/his/ngoaitru/tnkb/tiepnhan', customName = '') {
+      setLoading(true);
+      try {
+        if (route === '/new/his/chon-khoaphong') route = '/new/his/ngoaitru/tnkb/tiepnhan';
+        const loginRes = await requestBackendLogin(username, password, regionCode, route);
+        const data = loginRes.data;
+        const sessionId = loginRes.sessionId;
+
+        tabCounter++;
+        const newTabId = 'tab_' + Date.now();
+        const subdomain = 't' + tabCounter;
+
+        const defaultKhoa = data.defaultKhoa;
+        const defaultPhong = data.defaultPhong;
+        const userInfo = data.userInfo;
+        const tabTitle = customName || defaultKhoa?.name || userInfo?.fullName || username;
+
+        const newTab = {
+          id: newTabId,
+          subdomain: subdomain,
+          title: tabTitle,
+          account: {
+            username: username,
+            fullName: userInfo?.fullName || username,
+            companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+            phongName: defaultPhong?.name || '',
+            expiredTime: data.expiredTime,
+            accessToken: data.accessToken
+          },
+          sid: sessionId,
+          route: route
+        };
+
+        tabs.push(newTab);
+        createTabIframe(newTabId, subdomain, sessionId, route, data.accessToken);
+        activeTabId = newTabId;
+
+        renderTabsBar();
+        showToast(`Đã mở Tab mới: ${tabTitle}!`, 'success');
+      } catch (err) {
+        console.error('Lỗi mở tab mới:', err);
+        showToast(err.message || 'Lỗi đăng nhập tài khoản', 'error');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    // Mở Tab riêng cho Cấu hình Liên thông KSK / ĐTĐT / Viện phí
+    function openKskTab() {
+      const existing = tabs.find(t => t.type === 'ksk' || t.id.startsWith('tab_ksk_'));
+
+      if (existing) {
+        switchTab(existing.id);
+        const iframe = document.getElementById('frame-' + existing.id);
+        const bestTok = tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
+        if (iframe) {
+          const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
+          const targetSrc = `/lien-thong-ksk${tQuery}`;
+          if (!iframe.src || !iframe.src.includes('/lien-thong-ksk')) {
+            iframe.src = targetSrc;
+          } else if (bestTok) {
+            try {
+              iframe.contentWindow.postMessage({ type: 'SET_TOKEN', token: bestTok }, '*');
+            } catch(e) {}
+          }
+          iframe.classList.add('active');
+          iframe.style.display = 'block';
+        }
+        showToast('Đã chuyển sang Tab Cấu hình Liên thông.', 'info');
+        return;
+      }
+
+      tabCounter++;
+      const newTabId = 'tab_ksk_' + Date.now();
+      const subdomain = 't' + tabCounter;
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      const bestTok = currentTab?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || '';
+
+      const newTab = {
+        id: newTabId,
+        subdomain: subdomain,
+        title: '🛠️ Cấu hình Liên thông',
+        type: 'ksk',
+        account: currentTab ? { ...currentTab.account } : null,
+        sid: currentTab?.sid || null,
+        route: '/lien-thong-ksk'
+      };
+
+      tabs.push(newTab);
+      createTabIframe(newTabId, subdomain, '', '/lien-thong-ksk', bestTok);
+      activeTabId = newTabId;
+
+      renderTabsBar();
+      showToast('Đã mở Tab Cấu hình Nghiệp vụ (KSK, ĐTĐT, Viện Phí, Mẹ & Bé, Dược)!', 'success');
+    }
+
+    if (btnOpenKskTab) {
+      btnOpenKskTab.addEventListener('click', openKskTab);
+    }
+
+    // Mở Tab riêng cho Tool Trích xuất Danh mục Dịch vụ sang Excel (cURL to Excel)
+    function openExcelToolTab() {
+      const existing = tabs.find(t => t.type === 'excel' || t.id.startsWith('tab_excel_'));
+
+      if (existing) {
+        switchTab(existing.id);
+        const iframe = document.getElementById('frame-' + existing.id);
+        if (iframe) {
+          if (!iframe.src || !iframe.src.includes('/excel-tool')) {
+            iframe.src = '/excel-tool';
+          }
+          iframe.classList.add('active');
+          iframe.style.display = 'block';
+        }
+        showToast('Đã chuyển sang Tab Xuất Excel Danh mục DV.', 'info');
+        return;
+      }
+
+      tabCounter++;
+      const newTabId = 'tab_excel_' + Date.now();
+      const subdomain = 't' + tabCounter;
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      const bestTok = currentTab?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || '';
+
+      const newTab = {
+        id: newTabId,
+        subdomain: subdomain,
+        title: '📊 Xuất Excel Danh mục DV',
+        type: 'excel',
+        account: currentTab ? { ...currentTab.account } : null,
+        sid: currentTab?.sid || null,
+        route: '/excel-tool'
+      };
+
+      tabs.push(newTab);
+      createTabIframe(newTabId, subdomain, '', '/excel-tool', bestTok);
+      activeTabId = newTabId;
+
+      renderTabsBar();
+      showToast('Đã mở Tab Trích xuất Danh mục Dịch vụ sang Excel!', 'success');
+    }
+
+    if (btnOpenExcelTab) {
+      btnOpenExcelTab.addEventListener('click', openExcelToolTab);
+    }
+
+    // Mở Tab riêng cho Cảnh Báo Đơn Vị (Bệnh nhân chưa duyệt BHYT, KSK, Dược VTTH, v.v.)
+    function openCanhBaoTab() {
+      const existing = tabs.find(t => t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_'));
+
+      if (existing) {
+        switchTab(existing.id);
+        const iframe = document.getElementById('frame-' + existing.id);
+        const bestTok = tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
+        if (iframe) {
+          const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
+          const targetSrc = `/canh-bao${tQuery}`;
+          if (!iframe.src || !iframe.src.includes('/canh-bao')) {
+            iframe.src = targetSrc;
+          } else if (bestTok) {
+            try {
+              iframe.contentWindow.postMessage({ type: 'SET_TOKEN', token: bestTok }, '*');
+            } catch(e) {}
+          }
+          iframe.classList.add('active');
+          iframe.style.display = 'block';
+        }
+        showToast('Đã chuyển sang Tab Cảnh Báo Đơn Vị.', 'info');
+        return;
+      }
+
+      tabCounter++;
+      const newTabId = 'tab_canhbao_' + Date.now();
+      const subdomain = 't' + tabCounter;
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      const bestTok = currentTab?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || '';
+
+      const newTab = {
+        id: newTabId,
+        subdomain: subdomain,
+        title: '⚠️ Cảnh Báo Đơn Vị',
+        type: 'canh-bao',
+        account: currentTab ? { ...currentTab.account } : null,
+        sid: currentTab?.sid || null,
+        route: '/canh-bao'
+      };
+
+      tabs.push(newTab);
+      createTabIframe(newTabId, subdomain, '', '/canh-bao', bestTok);
+      activeTabId = newTabId;
+
+      renderTabsBar();
+      showToast('Đã mở Tab Cảnh Báo Đơn Vị!', 'success');
+    }
+
+    if (btnOpenCanhbaoTab) {
+      btnOpenCanhbaoTab.addEventListener('click', openCanhBaoTab);
+    }
+
+    // Sự kiện nút trên Header
+    btnLoginCurrent.addEventListener('click', handleLoginCurrentTab);
+
+    btnAddTabHeader.addEventListener('click', () => {
+      const username = inputUsername.value.trim();
+      const password = inputPassword.value.trim();
+      if (!username || !password) {
+        openNewTabModal();
+        return;
+      }
+      createNewTabWithAuth(username, password, 'region2', quickRouteSelect.value);
+    });
+
+    inputPassword.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLoginCurrentTab();
+    });
+
+    quickRouteSelect.addEventListener('change', (e) => {
+      const route = e.target.value;
+      if (route === '__manage_modules__') {
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab && currentTab.route) {
+          quickRouteSelect.value = currentTab.route;
+        }
+        openModulesModal();
+        return;
+      }
+      if (route === '/lien-thong-ksk') {
+        openKskTab();
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab && currentTab.route) quickRouteSelect.value = currentTab.route;
+        return;
+      }
+      if (route === '/excel-tool') {
+        openExcelToolTab();
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab && currentTab.route) quickRouteSelect.value = currentTab.route;
+        return;
+      }
+      if (route === '/canh-bao') {
+        openCanhBaoTab();
+        const currentTab = tabs.find(t => t.id === activeTabId);
+        if (currentTab && currentTab.route) quickRouteSelect.value = currentTab.route;
+        return;
+      }
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab && route) {
+        currentTab.route = route;
+        const iframe = document.getElementById('frame-' + currentTab.id);
+        if (iframe) {
+          const targetOrigin = getTabOrigin(currentTab.subdomain);
+          iframe.src = `${targetOrigin}${route}`;
+          showToast(`Chuyển phân hệ: ${e.target.options[e.target.selectedIndex].text}`, 'info');
+          updateBottomUrlBar();
+        }
+      }
+    });
+
+    btnReloadFrame.addEventListener('click', () => {
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      if (currentTab) {
+        const iframe = document.getElementById('frame-' + currentTab.id);
+        if (iframe) {
+          try { iframe.contentWindow.location.reload(); }
+          catch (e) { iframe.src = iframe.src; }
+          showToast('Đang làm mới tab hiện tại...', 'info');
+          setTimeout(updateBottomUrlBar, 500);
+        }
+      }
+    });
+
+    // Mở Tab trình duyệt Chrome riêng biệt (Browser Tab)
+    btnOpenBrowserTab.addEventListener('click', () => {
+      const currentTab = tabs.find(t => t.id === activeTabId);
+      const accId = Math.floor(Math.random() * 900 + 100);
+      if (currentTab && currentTab.sid) {
+        // Mở thẳng phiên đang làm việc trong tab Chrome mới
+        const browserUrl = `${getTabOrigin('acc' + accId)}/init-session?sid=${encodeURIComponent(currentTab.sid)}&route=${encodeURIComponent(currentTab.route || '/new/his/ngoaitru/tnkb/tiepnhan')}`;
+        window.open(browserUrl, '_blank');
+        showToast('Đang mở tab trình duyệt mới với phiên của tab này...', 'success');
+      } else {
+        // Mở trang quản trị trống trong tab Chrome mới
+        window.open(`${getTabOrigin('acc' + accId)}/`, '_blank');
+      }
+    });
+
+    // --- QUẢN LÝ THANH BOTTOM HIỂN THỊ LINK FRAME ---
+    function getActiveTabUrl(tab) {
+      if (!tab) return '';
+
+      if (tab.route === '/lien-thong-ksk' || tab.route?.startsWith('/lien-thong-ksk')) {
+        const tok = tab.account?.accessToken || '';
+        const query = tok ? `?token=${encodeURIComponent(tok)}` : '';
+        return `${window.location.origin}/lien-thong-ksk${query}`;
+      }
+
+      if (tab.route === '/excel-tool' || tab.route?.startsWith('/excel-tool')) {
+        return `${window.location.origin}/excel-tool`;
+      }
+
+      if (tab.route === '/canh-bao' || tab.route?.startsWith('/canh-bao')) {
+        const tok = tab.account?.accessToken || '';
+        const query = tok ? `?token=${encodeURIComponent(tok)}` : '';
+        return `${window.location.origin}/canh-bao${query}`;
+      }
+
+      // Đổi subdomain proxy (t1/t2...localhost:8888) thành đúng URL gốc của frame ytcs.hmis.vn
+      let route = tab.route || '/new/his/ngoaitru/tnkb/tiepnhan';
+      route = route.replace(/([?&])_v=\d+(&|$)/, '$1').replace(/[?&]$/, '');
+      if (!route.startsWith('/')) route = '/' + route;
+      return `https://ytcs.hmis.vn${route}`;
+    }
+
+    // Lắng nghe sự kiện đổi URL / Route thời gian thực từ các Frame (History pushState, single-spa, popstate)
+    window.addEventListener('message', (event) => {
+      if (!event.data || typeof event.data !== 'object') return;
+      if (event.data.type === 'YTCS_URL_CHANGED') {
+        const { url, pathname, search, hash, tabId, subdomain, title } = event.data;
+        if (!url) return;
+
+        try {
+          var img = new Image();
+          img.src = '/_mgr/trace?from=parent_msg_in&sub=' + encodeURIComponent(subdomain || '') + '&msg=' + encodeURIComponent(pathname || '') + '&url=' + encodeURIComponent(url);
+        } catch(e) {}
+
+        // Trích xuất subdomain từ tin nhắn hoặc từ event.origin (ví dụ: http://t2.localhost:8888 -> t2)
+        let originSubdomain = subdomain || '';
+        try {
+          if (!originSubdomain && event.origin) {
+            const u = new URL(event.origin);
+            const firstPart = u.hostname.split('.')[0];
+            if (firstPart && firstPart !== 'localhost') {
+              originSubdomain = firstPart;
+            }
+          }
+        } catch (e) {}
+
+        // Tìm tab tương ứng:
+        let matchedTab = null;
+        // 1. Khớp qua subdomain (t1, t2, t3...) - chính xác và độc lập 100%
+        if (originSubdomain) {
+          matchedTab = tabs.find(t => t.subdomain === originSubdomain);
+        }
+        // 2. Khớp qua tabId
+        if (!matchedTab && tabId) {
+          matchedTab = tabs.find(t => t.id === tabId);
+        }
+        // 3. Khớp qua WindowProxy (contentWindow)
+        if (!matchedTab) {
+          matchedTab = tabs.find(t => {
+            try {
+              const iframe = document.getElementById('frame-' + t.id);
+              return iframe && iframe.contentWindow === event.source;
+            } catch (e) { return false; }
+          });
+        }
+        // 4. Nếu chỉ có duy nhất 1 tab đang mở
+        if (!matchedTab && tabs.length === 1) {
+          matchedTab = tabs[0];
+        }
+        // 5. Fallback về activeTabId nếu frame đang active
+        if (!matchedTab) {
+          matchedTab = tabs.find(t => t.id === activeTabId);
+        }
+
+        if (matchedTab) {
+          const cleanPath = (pathname || '').replace(/([?&])_v=\d+(&|$)/, '$1').replace(/[?&]$/, '');
+          const cleanSearch = (search || '').replace(/([?&])_v=\d+(&|$)/, '$1').replace(/[?&]$/, '');
+          const fullRoute = cleanPath + (cleanSearch || '') + (hash || '');
+          matchedTab.route = fullRoute;
+
+          // Tạo URL hiển thị chuẩn https://ytcs.hmis.vn cho frame HIS
+          let displayUrl = '';
+          if (fullRoute.startsWith('/lien-thong-ksk')) {
+            displayUrl = `${window.location.origin}${fullRoute}`;
+          } else if (fullRoute.startsWith('/excel-tool')) {
+            displayUrl = `${window.location.origin}${fullRoute}`;
+          } else if (fullRoute.startsWith('/canh-bao')) {
+            displayUrl = `${window.location.origin}${fullRoute}`;
+          } else {
+            displayUrl = `https://ytcs.hmis.vn${fullRoute.startsWith('/') ? fullRoute : '/' + fullRoute}`;
+          }
+          matchedTab.currentUrl = displayUrl;
+
+          if (title && title !== 'VNPT HIS' && !title.includes('Khởi tạo')) {
+            matchedTab.pageTitle = title;
+          }
+
+          // Cập nhật ngay thanh Bottom và Dropdown phân hệ nếu đây là tab đang hiển thị
+          if (matchedTab.id === activeTabId || tabs.length === 1) {
+            try {
+              var img2 = new Image();
+              img2.src = '/_mgr/trace?from=parent_bottom_updated&sub=' + encodeURIComponent(matchedTab.subdomain || '') + '&msg=' + encodeURIComponent(matchedTab.id) + '&url=' + encodeURIComponent(displayUrl);
+            } catch(e) {}
+            if (bottomTabTitle) {
+              const displayTitle = matchedTab.pageTitle || matchedTab.title || ('Tab ' + (matchedTab.subdomain || ''));
+              bottomTabTitle.textContent = displayTitle.replace(/^VNPT HIS\s*[-–]\s*/i, '');
+            }
+            if (bottomFrameUrl) {
+              bottomFrameUrl.value = displayUrl;
+              bottomFrameUrl.title = `Đường dẫn gốc YTCS: ${displayUrl} (Nhấn Enter hoặc nút "Đi tới" để chuyển trang)`;
+            }
+            if (quickRouteSelect && pathname) {
+              const matchedOption = Array.from(quickRouteSelect.options).find(opt => opt.value && opt.value !== '/new/his/chon-khoaphong' && pathname.startsWith(opt.value));
+              if (matchedOption) {
+                quickRouteSelect.value = matchedOption.value;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    function updateBottomUrlBar() {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (!activeTab) return;
+
+      if (bottomTabTitle) {
+        const displayTitle = activeTab.pageTitle || activeTab.title || `Tab ${activeTab.subdomain || ''}`;
+        bottomTabTitle.textContent = displayTitle.replace(/^VNPT HIS\s*[-–]\s*/i, '');
+      }
+      const url = getActiveTabUrl(activeTab);
+      if (bottomFrameUrl) {
+        bottomFrameUrl.value = url;
+        bottomFrameUrl.title = `Đường dẫn gốc YTCS: ${url} (Nhấn Enter hoặc nút "Đi tới" để chuyển trang)`;
+      }
+    }
+
+    function setBottomBarVisibility(visible) {
+      if (visible) {
+        bottomBar.style.display = 'flex';
+        btnShowBottomBar.style.display = 'none';
+        if (btnToggleBottomBar) {
+          btnToggleBottomBar.style.background = '#e0f2fe';
+          btnToggleBottomBar.style.borderColor = '#38bdf8';
+          btnToggleBottomBar.style.color = '#0284c7';
+        }
+        localStorage.setItem('ytcs_bottom_bar_visible', 'true');
+        updateBottomUrlBar();
+      } else {
+        bottomBar.style.display = 'none';
+        btnShowBottomBar.style.display = 'inline-flex';
+        if (btnToggleBottomBar) {
+          btnToggleBottomBar.style.background = '#ffffff';
+          btnToggleBottomBar.style.borderColor = '#d1d5db';
+          btnToggleBottomBar.style.color = '#4b5563';
+        }
+        localStorage.setItem('ytcs_bottom_bar_visible', 'false');
+      }
+    }
+
+    function toggleBottomBar() {
+      const isVisible = bottomBar.style.display !== 'none';
+      setBottomBarVisibility(!isVisible);
+      showToast(isVisible ? 'Đã ẩn thanh link Frame ở đáy trang.' : 'Đã hiện thanh link Frame.', 'info');
+    }
+
+    function handleNavigateFromBottom() {
+      let inputUrl = bottomFrameUrl.value.trim();
+      if (!inputUrl) return;
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (!activeTab) return;
+      const iframe = document.getElementById('frame-' + activeTab.id);
+      if (!iframe) return;
+
+      let targetPath = inputUrl;
+      // Nếu người dùng nhập hoặc dán link chứa ytcs.hmis.vn hoặc localhost:8888
+      if (inputUrl.includes('ytcs.hmis.vn')) {
+        try {
+          const u = new URL(inputUrl);
+          targetPath = u.pathname + u.search + u.hash;
+        } catch(e) {
+          targetPath = inputUrl.replace(/^https?:\/\/ytcs\.hmis\.vn/i, '');
+        }
+      } else if (inputUrl.includes('localhost:8888')) {
+        try {
+          const u = new URL(inputUrl);
+          targetPath = u.pathname + u.search + u.hash;
+        } catch(e) {}
+      }
+
+      if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
+
+      activeTab.route = targetPath;
+      if (targetPath === '/lien-thong-ksk' || targetPath.startsWith('/lien-thong-ksk')) {
+        const tok = activeTab.account?.accessToken || '';
+        iframe.src = `${window.location.origin}${targetPath}${tok ? '?token=' + encodeURIComponent(tok) : ''}`;
+      } else if (targetPath === '/excel-tool' || targetPath.startsWith('/excel-tool')) {
+        iframe.src = `${window.location.origin}${targetPath}`;
+      } else if (targetPath === '/canh-bao' || targetPath.startsWith('/canh-bao')) {
+        const tok = activeTab.account?.accessToken || '';
+        iframe.src = `${window.location.origin}${targetPath}${tok ? '?token=' + encodeURIComponent(tok) : ''}`;
+      } else {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+        const host = isLocal && activeTab.subdomain ? `${activeTab.subdomain}.localhost:${window.location.port || 8888}` : window.location.host;
+        const sep = targetPath.includes('?') ? '&' : '?';
+        iframe.src = `${window.location.protocol}//${host}${targetPath}${sep}_v=${Date.now()}`;
+      }
+
+      showToast('Đang chuyển Frame tới: ' + targetPath, 'info');
+      setTimeout(updateBottomUrlBar, 500);
+    }
+
+    btnBottomNavigate.addEventListener('click', handleNavigateFromBottom);
+    bottomFrameUrl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleNavigateFromBottom();
+    });
+
+    btnBottomCopy.addEventListener('click', async () => {
+      const url = bottomFrameUrl.value.trim();
+      if (!url) return;
+      try {
+        await navigator.clipboard.writeText(url);
+        showToast('Đã sao chép liên kết YTCS!', 'success');
+      } catch (e) {
+        bottomFrameUrl.select();
+        document.execCommand('copy');
+        showToast('Đã sao chép liên kết!', 'success');
+      }
+    });
+
+    btnBottomOpenTab.addEventListener('click', () => {
+      const url = bottomFrameUrl.value.trim();
+      if (url) {
+        window.open(url, '_blank');
+        showToast('Đã mở trang trong tab trình duyệt mới!', 'info');
+      }
+    });
+
+    btnBottomReload.addEventListener('click', () => {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (!activeTab) return;
+      const iframe = document.getElementById('frame-' + activeTab.id);
+      if (iframe) {
+        try { iframe.contentWindow.location.reload(); }
+        catch (e) { iframe.src = iframe.src; }
+        showToast('Đang tải lại Frame...', 'info');
+        setTimeout(updateBottomUrlBar, 500);
+      }
+    });
+
+    btnBottomHide.addEventListener('click', () => {
+      setBottomBarVisibility(false);
+      showToast('Đã ẩn thanh link Frame. Bấm nút góc phải dưới hoặc nút 🔗 trên header để mở lại.', 'info');
+    });
+    btnShowBottomBar.addEventListener('click', () => {
+      setBottomBarVisibility(true);
+      showToast('Đã hiện lại thanh link Frame!', 'info');
+    });
+    btnToggleBottomBar.addEventListener('click', toggleBottomBar);
+
+    // --- MODAL MỞ TAB MỚI ---
+    function openNewTabModal() {
+      newTabUsername.value = inputUsername.value;
+      newTabPassword.value = inputPassword.value;
+      newTabAccountSelect.value = savedAccountsSelect.value;
+      newTabModal.classList.add('open');
+    }
+    function closeNewTabModal() {
+      newTabModal.classList.remove('open');
+    }
+
+    btnNewTabDialog.addEventListener('click', openNewTabModal);
+    btnCloseNewTabModal.addEventListener('click', closeNewTabModal);
+    btnCancelNewTab.addEventListener('click', closeNewTabModal);
+
+    newTabAccountSelect.addEventListener('change', (e) => {
+      const acc = accountsList.find(a => a.id === e.target.value);
+      if (acc) {
+        newTabUsername.value = acc.username;
+        newTabPassword.value = acc.password;
+      }
+    });
+
+    btnConfirmCreateTab.addEventListener('click', () => {
+      const user = newTabUsername.value.trim();
+      const pass = newTabPassword.value.trim();
+      const route = newTabRoute.value;
+      if (!user || !pass) {
+        alert('Vui lòng chọn hoặc nhập tài khoản & mật khẩu!');
+        return;
+      }
+      closeNewTabModal();
+      createNewTabWithAuth(user, pass, 'region2', route);
+    });
+
+    btnOpenAsBrowserTab.addEventListener('click', () => {
+      const user = newTabUsername.value.trim();
+      const pass = newTabPassword.value.trim();
+      const route = newTabRoute.value;
+      if (!user || !pass) {
+        alert('Vui lòng chọn hoặc nhập tài khoản & mật khẩu!');
+        return;
+      }
+      closeNewTabModal();
+      setLoading(true);
+      requestBackendLogin(user, pass, 'region2', route).then(res => {
+        const accId = Math.floor(Math.random() * 900 + 100);
+        const url = `${getTabOrigin('acc' + accId)}/init-session?sid=${encodeURIComponent(res.sessionId)}&route=${encodeURIComponent(route)}`;
+        window.open(url, '_blank');
+        showToast('Đã mở tài khoản trong Tab Trình duyệt Chrome mới!', 'success');
+      }).catch(err => {
+        showToast(err.message, 'error');
+      }).finally(() => setLoading(false));
+    });
+
+    // --- MODAL QUẢN LÝ TÀI KHOẢN ---
+    function openAccountsModal() {
+      accountsModal.classList.add('open');
+      editingAccountId = null;
+      if (modalAccountFilterInput) modalAccountFilterInput.value = '';
+      modalAccountFilter = '';
+      if (modalAccountFilterClear) modalAccountFilterClear.style.display = 'none';
+      renderModalTable();
+    }
+    function closeAccountsModal() {
+      accountsModal.classList.remove('open');
+      editingAccountId = null;
+      renderModalTable();
+    }
+    btnOpenModal.addEventListener('click', openAccountsModal);
+    btnCloseModal.addEventListener('click', closeAccountsModal);
+    modalBtnClose.addEventListener('click', closeAccountsModal);
+
+    modalBtnExport.addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(accountsList, null, 2));
+      const a = document.createElement('a');
+      a.href = dataStr;
+      a.download = `ytcs_accounts_${new Date().toISOString().slice(0,10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Đã xuất file cấu hình tài khoản.', 'success');
+    });
+
+    modalBtnImport.addEventListener('click', () => { modalFileImport.click(); });
+    modalFileImport.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const imported = JSON.parse(event.target.result);
+          if (Array.isArray(imported)) {
+            accountsList = imported;
+            saveAccountsToServer();
+            showToast(`Đã nạp ${imported.length} tài khoản thành công!`, 'success');
+          } else {
+            alert('File JSON không hợp lệ!');
+          }
+        } catch (err) {
+          alert('Lỗi đọc file: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+
+    // --- QUẢN LÝ DANH SÁCH MODULE HAY DÙNG ---
+    const DEFAULT_MODULES = [
+      { id: 'mod_1', name: '⚡ Khám Ngoại trú (Tiếp nhận)', route: '/new/his/ngoaitru/tnkb/tiepnhan' },
+      { id: 'mod_2', name: 'Khám Ngoại trú (Tổng quan)', route: '/new/his/ngoaitru' },
+      { id: 'mod_3', name: 'Điều trị Nội trú', route: '/new/his/noitru' },
+      { id: 'mod_4', name: 'Quản lý Dược', route: '/new/his/duoc' },
+      { id: 'mod_5', name: 'Quản lý Viện phí', route: '/new/his/vien-phi' },
+      { id: 'mod_6', name: 'Quản trị hệ thống', route: '/new/his/quantri-hethong' },
+      { id: 'mod_7', name: '🛠️ Cấu hình Liên thông (KSK / ĐTĐT)', route: '/lien-thong-ksk' },
+      { id: 'mod_8', name: '📊 Xuất Excel Danh mục DV (cURL)', route: '/excel-tool' },
+      { id: 'mod_canhbao', name: '⚠️ Cảnh Báo Đơn Vị', route: '/canh-bao' },
+      { id: 'mod_9', name: 'Màn hình Chọn khoa phòng', route: '/new/his/chon-khoaphong' },
+      { id: 'mod_10', name: 'Màn hình Login gốc', route: '/new/his/dang-nhap' }
+    ];
+
+    let customModulesList = [...DEFAULT_MODULES];
+    let editingModuleId = null;
+
+    const modulesModal = document.getElementById('modules-modal');
+    const btnOpenModulesModal = document.getElementById('btn-open-modules-modal');
+    const btnCloseModulesModal = document.getElementById('btn-close-modules-modal');
+    const btnCloseModulesFooter = document.getElementById('btn-close-modules-footer');
+    const btnGrabCurrentUrl = document.getElementById('btn-grab-current-url');
+    const btnSaveModule = document.getElementById('btn-save-module');
+    const btnCancelEditModule = document.getElementById('btn-cancel-edit-module');
+    const btnResetDefaultModules = document.getElementById('btn-reset-default-modules');
+
+    const moduleEditId = document.getElementById('module-edit-id');
+    const moduleNewName = document.getElementById('module-new-name');
+    const moduleNewRoute = document.getElementById('module-new-route');
+    const moduleFormTitle = document.getElementById('module-form-title');
+    const modulesCountLabel = document.getElementById('modules-count-label');
+    const modulesTableBody = document.getElementById('modules-table-body');
+    const newTabRouteSelect = document.getElementById('new-tab-route');
+
+    async function loadCustomModules() {
+      try {
+        const res = await fetch('/_mgr/modules');
+        if (res.ok) {
+          const list = await res.json();
+          if (Array.isArray(list) && list.length > 0) {
+            customModulesList = list;
+            localStorage.setItem('ytcs_custom_modules', JSON.stringify(customModulesList));
+            renderQuickModulesUI();
+            return;
+          }
+        }
+      } catch(e) {}
+
+      try {
+        const saved = localStorage.getItem('ytcs_custom_modules');
+        if (saved) {
+          const list = JSON.parse(saved);
+          if (Array.isArray(list) && list.length > 0) {
+            customModulesList = list;
+          }
+        }
+      } catch(e) {}
+
+      renderQuickModulesUI();
+    }
+
+    async function saveCustomModulesToServer() {
+      try {
+        localStorage.setItem('ytcs_custom_modules', JSON.stringify(customModulesList));
+        await fetch('/_mgr/modules', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(customModulesList)
+        });
+      } catch(e) {
+        console.error('Lỗi lưu custom modules:', e);
+      }
+      renderQuickModulesUI();
+    }
+
+    function renderQuickModulesUI() {
+      if (quickRouteSelect) {
+        const curVal = quickRouteSelect.value;
+        let html = '';
+        customModulesList.forEach(m => {
+          html += `<option value="${escapeHtml(m.route)}">${escapeHtml(m.name)}</option>`;
+        });
+        html += `<option value="__manage_modules__" style="color: #2563eb; font-weight: bold;">⚙️ Tùy chỉnh danh sách module...</option>`;
+        quickRouteSelect.innerHTML = html;
+        if (curVal && curVal !== '__manage_modules__') {
+          quickRouteSelect.value = curVal;
+        }
+      }
+
+      if (newTabRouteSelect) {
+        let html = '';
+        customModulesList.forEach(m => {
+          html += `<option value="${escapeHtml(m.route)}">${escapeHtml(m.name)}</option>`;
+        });
+        newTabRouteSelect.innerHTML = html;
+      }
+
+      renderModulesTable();
+    }
+
+    function renderModulesTable() {
+      if (!modulesTableBody) return;
+      if (modulesCountLabel) {
+        modulesCountLabel.textContent = `Danh sách module (${customModulesList.length})`;
+      }
+
+      if (customModulesList.length === 0) {
+        modulesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Chưa có module nào. Bấm "Khôi phục mặc định" hoặc thêm module mới phía trên.</td></tr>`;
+        return;
+      }
+
+      let rowsHtml = '';
+      customModulesList.forEach((mod, idx) => {
+        const isEditing = (editingModuleId === mod.id);
+        rowsHtml += `
+          <tr style="${isEditing ? 'background: #eff6ff;' : ''}">
+            <td style="text-align: center; color: #64748b; font-size: 11px;">${idx + 1}</td>
+            <td style="font-weight: 600; color: #1e293b;">${escapeHtml(mod.name)}</td>
+            <td style="font-family: monospace; font-size: 11.5px; color: #475569; word-break: break-all;">${escapeHtml(mod.route)}</td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button type="button" class="btn btn-outline" style="padding: 1px 5px; font-size: 10px;" onclick="moveModuleUp(${idx})" ${idx === 0 ? 'disabled style="opacity:0.3;"' : ''} title="Lên trên">⬆️</button>
+              <button type="button" class="btn btn-outline" style="padding: 1px 5px; font-size: 10px;" onclick="moveModuleDown(${idx})" ${idx === customModulesList.length - 1 ? 'disabled style="opacity:0.3;"' : ''} title="Xuống dưới">⬇️</button>
+            </td>
+            <td style="text-align: center; white-space: nowrap;">
+              <button type="button" class="btn btn-outline" style="padding: 2px 6px; font-size: 11px; margin-right: 4px;" onclick="startEditModule('${mod.id}')" title="Sửa module này">✏️ Sửa</button>
+              <button type="button" class="btn btn-outline" style="padding: 2px 6px; font-size: 11px; color: #dc2626; border-color: #fca5a5;" onclick="deleteModule('${mod.id}')" title="Xóa module này">🗑️</button>
+            </td>
+          </tr>
+        `;
+      });
+      modulesTableBody.innerHTML = rowsHtml;
+    }
+
+    function openModulesModal() {
+      if (modulesModal) modulesModal.classList.add('open');
+      cancelEditModule();
+      renderModulesTable();
+    }
+
+    function closeModulesModal() {
+      if (modulesModal) modulesModal.classList.remove('open');
+      cancelEditModule();
+    }
+
+    if (btnOpenModulesModal) btnOpenModulesModal.addEventListener('click', openModulesModal);
+    if (btnCloseModulesModal) btnCloseModulesModal.addEventListener('click', closeModulesModal);
+    if (btnCloseModulesFooter) btnCloseModulesFooter.addEventListener('click', closeModulesModal);
+
+    window.startEditModule = function(id) {
+      const mod = customModulesList.find(m => m.id === id);
+      if (!mod) return;
+      editingModuleId = mod.id;
+      if (moduleEditId) moduleEditId.value = mod.id;
+      if (moduleNewName) moduleNewName.value = mod.name;
+      if (moduleNewRoute) moduleNewRoute.value = mod.route;
+      if (moduleFormTitle) moduleFormTitle.textContent = `Chỉnh sửa: ${mod.name}`;
+      if (btnSaveModule) btnSaveModule.textContent = '💾 Lưu thay đổi';
+      if (btnCancelEditModule) btnCancelEditModule.style.display = 'inline-block';
+      if (moduleNewName) moduleNewName.focus();
+      renderModulesTable();
+    };
+
+    window.cancelEditModule = function() {
+      editingModuleId = null;
+      if (moduleEditId) moduleEditId.value = '';
+      if (moduleNewName) moduleNewName.value = '';
+      if (moduleNewRoute) moduleNewRoute.value = '';
+      if (moduleFormTitle) moduleFormTitle.textContent = 'Thêm Module mới';
+      if (btnSaveModule) btnSaveModule.textContent = '➕ Thêm vào danh sách';
+      if (btnCancelEditModule) btnCancelEditModule.style.display = 'none';
+      renderModulesTable();
+    };
+
+    if (btnCancelEditModule) {
+      btnCancelEditModule.addEventListener('click', cancelEditModule);
+    }
+
+    if (btnSaveModule) {
+      btnSaveModule.addEventListener('click', () => {
+        const name = (moduleNewName?.value || '').trim();
+        let route = (moduleNewRoute?.value || '').trim();
+        if (!name) {
+          showToast('Vui lòng nhập Tên hiển thị của module!', 'error');
+          if (moduleNewName) moduleNewName.focus();
+          return;
+        }
+        if (!route) {
+          showToast('Vui lòng nhập Đường dẫn Route của module!', 'error');
+          if (moduleNewRoute) moduleNewRoute.focus();
+          return;
+        }
+        if (!route.startsWith('/') && !route.startsWith('http://') && !route.startsWith('https://')) {
+          route = '/' + route;
+        }
+
+        if (editingModuleId) {
+          const mod = customModulesList.find(m => m.id === editingModuleId);
+          if (mod) {
+            mod.name = name;
+            mod.route = route;
+            saveCustomModulesToServer();
+            showToast(`Đã cập nhật module "${name}" thành công!`, 'success');
+          }
+          cancelEditModule();
+        } else {
+          const newMod = {
+            id: 'mod_' + Date.now(),
+            name: name,
+            route: route
+          };
+          customModulesList.push(newMod);
+          saveCustomModulesToServer();
+          showToast(`Đã thêm module "${name}" vào danh sách!`, 'success');
+          if (moduleNewName) moduleNewName.value = '';
+          if (moduleNewRoute) moduleNewRoute.value = '';
+        }
+      });
+    }
+
+    window.deleteModule = function(id) {
+      const mod = customModulesList.find(m => m.id === id);
+      if (!mod) return;
+      if (confirm(`Bạn có chắc muốn xóa module "${mod.name}" khỏi danh sách?`)) {
+        customModulesList = customModulesList.filter(m => m.id !== id);
+        if (editingModuleId === id) cancelEditModule();
+        saveCustomModulesToServer();
+        showToast(`Đã xóa module "${mod.name}".`, 'info');
+      }
+    };
+
+    window.moveModuleUp = function(idx) {
+      if (idx <= 0 || idx >= customModulesList.length) return;
+      const tmp = customModulesList[idx];
+      customModulesList[idx] = customModulesList[idx - 1];
+      customModulesList[idx - 1] = tmp;
+      saveCustomModulesToServer();
+    };
+
+    window.moveModuleDown = function(idx) {
+      if (idx < 0 || idx >= customModulesList.length - 1) return;
+      const tmp = customModulesList[idx];
+      customModulesList[idx] = customModulesList[idx + 1];
+      customModulesList[idx + 1] = tmp;
+      saveCustomModulesToServer();
+    };
+
+    if (btnResetDefaultModules) {
+      btnResetDefaultModules.addEventListener('click', () => {
+        if (confirm('Khôi phục danh sách về 10 module mặc định ban đầu?')) {
+          customModulesList = JSON.parse(JSON.stringify(DEFAULT_MODULES));
+          cancelEditModule();
+          saveCustomModulesToServer();
+          showToast('Đã khôi phục danh sách module mặc định.', 'success');
+        }
+      });
+    }
+
+    if (btnGrabCurrentUrl) {
+      btnGrabCurrentUrl.addEventListener('click', () => {
+        const curTab = tabs.find(t => t.id === activeTabId);
+        if (!curTab) {
+          showToast('Không có tab nào đang hoạt động.', 'warning');
+          return;
+        }
+        let currentRoute = curTab.route || '';
+        try {
+          const iframe = document.getElementById('frame-' + curTab.id);
+          if (iframe && iframe.contentWindow) {
+            const loc = iframe.contentWindow.location;
+            if (loc && loc.pathname && loc.pathname !== 'about:blank') {
+              currentRoute = loc.pathname + loc.search + loc.hash;
+            }
+          }
+        } catch(e) {}
+
+        if (!currentRoute) {
+          showToast('Không lấy được đường dẫn của tab hiện tại.', 'warning');
+          return;
+        }
+
+        if (moduleNewRoute) moduleNewRoute.value = currentRoute;
+        if (moduleNewName && !moduleNewName.value.trim()) {
+          const tabTitle = (curTab.pageTitle || curTab.title || '').replace(/^Tab \d+:\s*/i, '').replace(/^VNPT HIS\s*[-–]\s*/i, '').trim();
+          moduleNewName.value = tabTitle || 'Phân hệ mới';
+        }
+        showToast(`Đã lấy đường dẫn: ${currentRoute}`, 'info');
+      });
+    }
+
+    // --- QUẢN LÝ NHẬT KÝ API THEO THỜI GIAN THỰC (ĐÚNG THEO URL FRAME) ---
+    let liveApiLogs = [];
+    let apilogSubFilter = 'all';
+    let apilogSearchKeyword = '';
+    let apilogsAutoRefreshTimer = null;
+
+    const apilogsModal = document.getElementById('apilogs-modal');
+    const apilogsListEl = document.getElementById('apilogs-list');
+    const apilogsSearchInput = document.getElementById('apilogs-search-input');
+    const apilogsSubFilterSelect = document.getElementById('apilogs-sub-filter');
+    const apilogsAutoRefreshCheckbox = document.getElementById('apilogs-auto-refresh');
+    const apilogsShownCountEl = document.getElementById('apilogs-shown-count');
+    const apilogsTotalCountEl = document.getElementById('apilogs-total-count');
+    const headerApilogBadge = document.getElementById('header-apilog-badge');
+    const bottomApilogBadge = document.getElementById('bottom-apilog-badge');
+    const btnOpenApilogsHeader = document.getElementById('btn-open-apilogs-header');
+    const btnOpenApilogsBottom = document.getElementById('btn-open-apilogs-bottom');
+    const btnCloseApilogs = document.getElementById('btn-close-apilogs');
+    const btnCloseApilogsFooter = document.getElementById('btn-close-apilogs-footer');
+    const btnApilogsRefresh = document.getElementById('btn-apilogs-refresh');
+    const btnApilogsClear = document.getElementById('btn-apilogs-clear');
+
+    function updateApiLogBadges() {
+      const countStr = liveApiLogs.length > 99 ? '99+' : String(liveApiLogs.length);
+      if (headerApilogBadge) headerApilogBadge.textContent = countStr;
+      if (bottomApilogBadge) bottomApilogBadge.textContent = countStr;
+    }
+
+    async function fetchServerApiLogs() {
+      try {
+        const subParam = apilogSubFilter !== 'all' ? `&sub=${encodeURIComponent(apilogSubFilter)}` : '';
+        const res = await fetch(`/_mgr/api-logs?limit=150${subParam}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data && Array.isArray(data.logs)) {
+          const existingIds = new Set(liveApiLogs.map(l => l.id));
+          data.logs.forEach(item => {
+            if (!existingIds.has(item.id)) {
+              liveApiLogs.push(item);
+            }
+          });
+          liveApiLogs.sort((a, b) => (new Date(b.time || b.timestamp).getTime()) - (new Date(a.time || a.timestamp).getTime()));
+          if (liveApiLogs.length > 250) liveApiLogs.length = 250;
+          updateApiLogBadges();
+          if (apilogsModal && apilogsModal.classList.contains('open')) {
+            renderApiLogsList();
+          }
+        }
+      } catch(e) {}
+    }
+
+    function updateSubFilterOptions() {
+      if (!apilogsSubFilterSelect) return;
+      const currentVal = apilogsSubFilterSelect.value || 'all';
+      const subs = new Set();
+      liveApiLogs.forEach(l => { if (l.subdomain) subs.add(l.subdomain); });
+      tabs.forEach(t => { if (t.subdomain) subs.add(t.subdomain); });
+
+      let html = '<option value="all">Tất cả Tab / Subdomain</option>';
+      Array.from(subs).sort().forEach(sub => {
+        const matchingTab = tabs.find(t => t.subdomain === sub);
+        const title = matchingTab ? (matchingTab.title || matchingTab.name || sub) : sub;
+        html += `<option value="${escapeHtml(sub)}">${escapeHtml(sub)} - ${escapeHtml(title)}</option>`;
+      });
+      apilogsSubFilterSelect.innerHTML = html;
+      apilogsSubFilterSelect.value = currentVal;
+    }
+
+    function renderApiLogsList() {
+      if (!apilogsListEl) return;
+      updateSubFilterOptions();
+
+      const kw = apilogSearchKeyword.toLowerCase().trim();
+      const filtered = liveApiLogs.filter(item => {
+        if (apilogSubFilter !== 'all' && item.subdomain !== apilogSubFilter) return false;
+        if (!kw) return true;
+        const combined = `${item.method} ${item.apiUrl || ''} ${item.frameUrl || ''} ${item.body || ''} ${item.subdomain || ''}`.toLowerCase();
+        return combined.includes(kw);
+      });
+
+      if (apilogsShownCountEl) apilogsShownCountEl.textContent = filtered.length;
+      if (apilogsTotalCountEl) apilogsTotalCountEl.textContent = liveApiLogs.length;
+
+      if (filtered.length === 0) {
+        apilogsListEl.innerHTML = `
+          <div style="text-align: center; padding: 40px 10px; color: #94a3b8; font-size: 13px;">
+            <div style="font-size: 32px; margin-bottom: 8px;">📡</div>
+            ${liveApiLogs.length === 0 ? 'Chưa có lượt gọi API nào được ghi nhận. Hãy thao tác trên màn hình HIS để bắt đầu ghi log.' : 'Không tìm thấy lượt gọi API nào khớp với bộ lọc tìm kiếm.'}
+          </div>
+        `;
+        return;
+      }
+
+      let html = '';
+      filtered.forEach(item => {
+        const method = (item.method || 'GET').toUpperCase();
+        let methodClass = 'apilog-pill-get';
+        if (method === 'POST') methodClass = 'apilog-pill-post';
+        else if (method === 'PUT' || method === 'PATCH') methodClass = 'apilog-pill-put';
+        else if (method === 'DELETE') methodClass = 'apilog-pill-delete';
+
+        const status = item.statusCode || 200;
+        const statusClass = status >= 400 ? 'apilog-status-err' : 'apilog-status-ok';
+        const matchingTab = tabs.find(t => t.subdomain === item.subdomain);
+        const tabTitle = matchingTab ? (matchingTab.title || matchingTab.name || item.subdomain) : item.subdomain;
+
+        const timeStr = item.timeStr || (item.time ? new Date(item.time).toLocaleTimeString('vi-VN') : '');
+        const durationStr = item.durationMs ? `${item.durationMs}ms` : '';
+
+        html += `
+          <div class="apilog-card" id="apilog-card-${item.id}">
+            <div class="apilog-header-row">
+              <div class="apilog-header-tags">
+                <span class="apilog-pill ${methodClass}">${escapeHtml(method)}</span>
+                <span class="apilog-status ${statusClass}">${escapeHtml(String(status))}</span>
+                <span class="apilog-sub-tag">🏥 ${escapeHtml(item.subdomain || 'main')}: ${escapeHtml(tabTitle)}</span>
+                ${durationStr ? `<span style="font-size: 11px; color: #64748b; font-weight: 600;">⏱️ ${durationStr}</span>` : ''}
+              </div>
+              <span class="apilog-time-tag">🕒 ${escapeHtml(timeStr)}</span>
+            </div>
+
+            <div class="apilog-url-line">
+              <span class="label">📄 Trang Frame:</span>
+              <span class="val-frame">${escapeHtml(item.frameUrl || '')}</span>
+            </div>
+
+            <div class="apilog-url-line">
+              <span class="label">🌐 URL API Target:</span>
+              <span class="val-api">${escapeHtml(item.apiUrl || '')}</span>
+            </div>
+
+            <div class="apilog-actions-row">
+              <button type="button" class="btn-apilog-action btn-apilog-curl" onclick="copyApiLogCurl('${item.id}')" title="Sao chép cURL thật (https://ytcs-gw.hmis.vn) để test trong Postman / Terminal / Excel Tool">
+                📋 Sao chép cURL thật
+              </button>
+              <button type="button" class="btn-apilog-action btn-apilog-bocdulieu" onclick="sendApiLogToBocDuLieu('${item.id}')" title="Chuyển API và Payload này sang phần Bóc Dữ Liệu ở Tab Liên Thông KSK để giải mã & phân tích ngay">
+                ⚡ Gửi sang Bóc Dữ Liệu
+              </button>
+              <button type="button" class="btn-apilog-action btn-apilog-detail" onclick="toggleApiLogDetail('${item.id}')" title="Xem chi tiết Headers, Payload và cURL">
+                🔍 Chi tiết
+              </button>
+            </div>
+
+            <div class="apilog-detail-box" id="detail-box-${item.id}">
+              <div style="color: #a78bfa; margin-bottom: 6px; font-weight: bold;">-- LỆNH CURL GỐC HOÀN CHỈNH --</div>
+              <div>${escapeHtml(item.curl || '')}</div>
+              ${item.body ? `<div style="color: #34d399; margin: 8px 0 4px; font-weight: bold;">-- REQUEST BODY PAYLOAD --</div><div>${escapeHtml(typeof item.body === 'string' ? item.body : JSON.stringify(item.body, null, 2))}</div>` : ''}
+              <div style="margin-top: 10px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.15); display: flex; gap: 8px;">
+                <button type="button" class="btn-apilog-action btn-apilog-excel" onclick="sendApiLogToExcel('${item.id}')" title="Chuyển cURL này sang Tab Xuất Excel Danh mục DV">
+                  📊 Gửi sang Excel Tool
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      apilogsListEl.innerHTML = html;
+    }
+
+    window.toggleApiLogDetail = function(id) {
+      const box = document.getElementById('detail-box-' + id);
+      if (box) {
+        box.style.display = box.style.display === 'block' ? 'none' : 'block';
+      }
+    };
+
+    window.copyApiLogCurl = function(id) {
+      const item = liveApiLogs.find(l => l.id === id);
+      if (!item || !item.curl) {
+        showToast('Không có thông tin cURL cho lượt gọi này', 'error');
+        return;
+      }
+      navigator.clipboard.writeText(item.curl).then(() => {
+        showToast('Đã sao chép cURL với URL thật (https://ytcs-gw.hmis.vn) vào Clipboard!', 'success');
+      }).catch(() => {
+        showToast('Không thể sao chép, vui lòng mở Chi tiết để copy thủ công', 'error');
+      });
+    };
+
+    window.sendApiLogToBocDuLieu = function(id) {
+      const item = liveApiLogs.find(l => l.id === id);
+      if (!item) {
+        showToast('Không có thông tin cho lượt gọi API này', 'error');
+        return;
+      }
+
+      // Xác định Token từ Tab phát sinh request hoặc Tab đang active
+      let token = '';
+      if (item.subdomain) {
+        const matchedTab = tabs.find(t => t.subdomain === item.subdomain);
+        if (matchedTab && matchedTab.account?.accessToken) {
+          token = matchedTab.account.accessToken;
+        }
+      }
+      if (!token) {
+        const curTab = tabs.find(t => t.id === activeTabId);
+        token = curTab?.account?.accessToken || '';
+      }
+
+      const payloadData = {
+        apiUrl: item.apiUrl || item.realApiUrl || '',
+        body: item.body || '',
+        curl: item.curl || '',
+        method: item.method || 'POST',
+        token: token,
+        autoExecute: true
+      };
+
+      // 1. Kiểm tra xem Tab KSK đã được mở sẵn chưa
+      const kskTab = tabs.find(t => t.route === '/lien-thong-ksk' || t.route?.startsWith('/lien-thong-ksk') || t.id.startsWith('tab_ksk_'));
+
+      if (kskTab) {
+        // Tab KSK đã mở sẵn: Chuyển sang Tab KSK ngay, KHÔNG nạp lại iframe, KHÔNG đổi token chung của tab KSK
+        switchTab(kskTab.id);
+        const iframe = document.getElementById('frame-' + kskTab.id);
+        let delivered = false;
+        if (iframe && iframe.contentWindow) {
+          try {
+            if (typeof iframe.contentWindow.handleIncomingBocDuLieu === 'function') {
+              iframe.contentWindow.handleIncomingBocDuLieu(payloadData);
+              delivered = true;
+            } else {
+              iframe.contentWindow.postMessage({ type: 'SET_BOC_DU_LIEU', ...payloadData }, '*');
+              delivered = true;
+            }
+          } catch(e) {}
+        }
+        if (!delivered) {
+          try {
+            localStorage.setItem('ytcs_pending_boc_du_lieu', JSON.stringify(payloadData));
+          } catch(e) {}
+        }
+      } else {
+        // Tab KSK chưa mở: Lưu pending và mở tab mới
+        try {
+          localStorage.setItem('ytcs_pending_boc_du_lieu', JSON.stringify(payloadData));
+        } catch(e) {}
+        openKskTab();
+      }
+
+      closeApilogsModal();
+      showToast('Đã chuyển sang phần Bóc Dữ Liệu (Tab 6)!', 'success');
+    };
+
+    window.sendApiLogToExcel = function(id) {
+      const item = liveApiLogs.find(l => l.id === id);
+      if (!item || !item.curl) {
+        showToast('Không có thông tin cURL cho lượt gọi này', 'error');
+        return;
+      }
+
+      localStorage.setItem('ytcs_pending_curl', item.curl);
+
+      openExcelToolTab();
+
+      setTimeout(() => {
+        const excelTab = tabs.find(t => t.route === '/excel-tool');
+        if (excelTab) {
+          const iframe = document.getElementById('frame-' + excelTab.id);
+          if (iframe && iframe.contentWindow) {
+            try {
+              iframe.contentWindow.postMessage({ type: 'SET_CURL_INPUT', curl: item.curl }, '*');
+            } catch(e) {}
+          }
+        }
+      }, 300);
+
+      closeApilogsModal();
+      showToast('Đã gửi cURL sang Tab Xuất Excel Danh mục DV!', 'success');
+    };
+
+    function openApilogsModal() {
+      apilogsModal.classList.add('open');
+      fetchServerApiLogs();
+      renderApiLogsList();
+      if (!apilogsAutoRefreshTimer) {
+        apilogsAutoRefreshTimer = setInterval(() => {
+          if (apilogsAutoRefreshCheckbox && apilogsAutoRefreshCheckbox.checked && apilogsModal.classList.contains('open')) {
+            fetchServerApiLogs();
+          }
+        }, 2000);
+      }
+    }
+
+    function closeApilogsModal() {
+      apilogsModal.classList.remove('open');
+      if (apilogsAutoRefreshTimer) {
+        clearInterval(apilogsAutoRefreshTimer);
+        apilogsAutoRefreshTimer = null;
+      }
+    }
+
+    if (btnOpenApilogsHeader) btnOpenApilogsHeader.addEventListener('click', openApilogsModal);
+    if (btnOpenApilogsBottom) btnOpenApilogsBottom.addEventListener('click', openApilogsModal);
+    if (btnCloseApilogs) btnCloseApilogs.addEventListener('click', closeApilogsModal);
+    if (btnCloseApilogsFooter) btnCloseApilogsFooter.addEventListener('click', closeApilogsModal);
+    if (btnApilogsRefresh) btnApilogsRefresh.addEventListener('click', () => { fetchServerApiLogs(); renderApiLogsList(); });
+    if (btnApilogsClear) {
+      btnApilogsClear.addEventListener('click', async () => {
+        if (!confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử log API hiện tại?')) return;
+        liveApiLogs = [];
+        updateApiLogBadges();
+        renderApiLogsList();
+        try {
+          await fetch('/_mgr/api-logs', { method: 'DELETE' });
+        } catch(e) {}
+        showToast('Đã làm trống danh sách nhật ký API', 'info');
+      });
+    }
+
+    if (apilogsSearchInput) {
+      apilogsSearchInput.addEventListener('input', (e) => {
+        apilogSearchKeyword = e.target.value;
+        renderApiLogsList();
+      });
+    }
+
+    if (apilogsSubFilterSelect) {
+      apilogsSubFilterSelect.addEventListener('change', (e) => {
+        apilogSubFilter = e.target.value;
+        renderApiLogsList();
+      });
+    }
+
+    // Lắng nghe postMessage YTCS_API_LOG từ các frame
+    window.addEventListener('message', (event) => {
+      if (!event.data || typeof event.data !== 'object') return;
+      if (event.data.type === 'YTCS_API_LOG' && event.data.data) {
+        const logData = event.data.data;
+        const entry = {
+          id: Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          time: new Date().toISOString(),
+          timeStr: new Date().toLocaleTimeString('vi-VN'),
+          subdomain: logData.subdomain || 'main',
+          method: logData.method || 'GET',
+          apiUrl: logData.realApiUrl || '',
+          frameUrl: logData.realFrameUrl || '',
+          statusCode: 200,
+          durationMs: 0,
+          curl: logData.curl || '',
+          body: logData.body || ''
+        };
+        liveApiLogs.unshift(entry);
+        if (liveApiLogs.length > 250) liveApiLogs.pop();
+        updateApiLogBadges();
+        if (apilogsModal && apilogsModal.classList.contains('open')) {
+          renderApiLogsList();
+        }
+      }
+    });
+
+    setInterval(fetchServerApiLogs, 5000);
+
+    // --- KHỞI TẠO TAB ĐẦU TIÊN (TAB 1) ---
+    async function initFirstTab() {
+      await loadAccounts();
+      await loadCustomModules();
+
+      // Khởi tạo trạng thái thanh Bottom Bar (mặc định hiện)
+      const savedBottomBarState = localStorage.getItem('ytcs_bottom_bar_visible');
+      if (savedBottomBarState === 'false') {
+        setBottomBarVisibility(false);
+      } else {
+        setBottomBarVisibility(true);
+      }
+
+      // Tạo Tab 1 mặc định
+      const tab1Id = 'tab_1';
+      activeTabId = tab1Id;
+      const initialTab = {
+        id: tab1Id,
+        subdomain: 't1',
+        title: 'Tab 1: Tiếp nhận',
+        account: null,
+        sid: null,
+        route: '/new/his/ngoaitru/tnkb/tiepnhan'
+      };
+      tabs.push(initialTab);
+
+      // Nếu có sẵn tài khoản mẫu, tự động đăng nhập và tải Tab 1
+      if (accountsList.length > 0) {
+        const firstAcc = accountsList[0];
+        fillForm(firstAcc.id);
+        createNewTabWithAuth(firstAcc.username, firstAcc.password, firstAcc.regionCode || 'region2', '/new/his/ngoaitru/tnkb/tiepnhan', firstAcc.name)
+          .then(() => {
+            // Xóa tab placeholder ban đầu nếu tab mới đã tạo
+            const placeholderIdx = tabs.findIndex(t => t.id === 'tab_1');
+            if (placeholderIdx !== -1 && tabs.length > 1) {
+              const placeholderFrame = document.getElementById('frame-tab_1');
+              if (placeholderFrame) placeholderFrame.remove();
+              tabs.splice(placeholderIdx, 1);
+              renderTabsBar();
+            }
+          });
+      } else {
+        createTabIframe(tab1Id, 't1', '', '/new/his/ngoaitru/tnkb/tiepnhan');
+        renderTabsBar();
+      }
+    }
+
+    initFirstTab();
+  </script>
+</body>
+</html>
