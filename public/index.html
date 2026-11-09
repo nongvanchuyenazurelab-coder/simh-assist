@@ -2599,49 +2599,108 @@
         const userInfo = data.userInfo;
         const titleName = defaultKhoa?.name || userInfo?.fullName || username;
 
-        // Nếu tab này trước đó là tab công cụ đặc biệt (canh-bao, ksk, excel) nhưng người dùng đăng nhập tài khoản HIS vào đây:
-        // Đổi ID tab thành ID chuẩn 'tab_...' để không bị nhận nhầm là tab công cụ nữa!
-        if (currentTab.id.startsWith('tab_canhbao_') || currentTab.id.startsWith('tab_ksk_') || currentTab.id.startsWith('tab_excel_') || currentTab.type) {
-          const oldId = currentTab.id;
-          const freshId = 'tab_' + Date.now();
-          currentTab.id = freshId;
-          delete currentTab.type;
-          const oldIframe = document.getElementById('frame-' + oldId);
-          if (oldIframe) {
-            oldIframe.id = 'frame-' + freshId;
-            oldIframe.name = freshId;
-          }
-          activeTabId = freshId;
-        }
+        const isToolTab = currentTab.id.startsWith('tab_canhbao_') || currentTab.id.startsWith('tab_ksk_') || currentTab.id.startsWith('tab_excel_') || Boolean(currentTab.type) || (currentTab.route && (currentTab.route.startsWith('/lien-thong-ksk') || currentTab.route.startsWith('/canh-bao') || currentTab.route.startsWith('/excel-tool')));
 
-        currentTab.title = titleName;
-        currentTab.account = {
-          username: username,
-          fullName: userInfo?.fullName || username,
-          companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
-          phongName: defaultPhong?.name || '',
-          expiredTime: data.expiredTime,
-          accessToken: data.accessToken
-        };
-        currentTab.sid = sessionId;
-        currentTab.route = route;
+        if (isToolTab) {
+          // TRƯỜNG HỢP 1: ĐANG Ở TAB CÔNG CỤ (Cấu hình liên thông/nghiệp vụ, Cảnh báo, Xuất Excel):
+          // 1. Giữ nguyên tab công cụ hiện tại, không chuyển thành tab HIS, cập nhật account & token cho nó
+          currentTab.account = {
+            username: username,
+            fullName: userInfo?.fullName || username,
+            companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+            phongName: defaultPhong?.name || '',
+            expiredTime: data.expiredTime,
+            accessToken: data.accessToken
+          };
+          currentTab.sid = sessionId;
 
-        // Tải lại iframe của tab hiện tại với session mới
-        const iframe = document.getElementById('frame-' + currentTab.id);
-        if (iframe) {
-          if (route === '/lien-thong-ksk' || route.startsWith('/lien-thong-ksk')) {
-            iframe.src = `/lien-thong-ksk?token=${encodeURIComponent(data.accessToken)}`;
-          } else if (route === '/excel-tool' || route.startsWith('/excel-tool')) {
-            iframe.src = '/excel-tool';
-          } else if (route === '/canh-bao' || route.startsWith('/canh-bao')) {
-            iframe.src = `/canh-bao?token=${encodeURIComponent(data.accessToken)}`;
+          // 2. Tự động đồng bộ và nạp phiên làm việc của đơn vị mới sang TẤT CẢ các tab HIS nghiệp vụ (Khám bệnh, Tiếp nhận...)
+          // Để khi người dùng bấm quay lại các màn nghiệp vụ thì màn hình đó ĐÃ CHUYỂN sang đơn vị vừa đăng nhập!
+          const hisTabs = tabs.filter(t => !t.type && !t.id.startsWith('tab_ksk_') && !t.id.startsWith('tab_canhbao_') && !t.id.startsWith('tab_excel_') && !(t.route && (t.route.startsWith('/lien-thong-ksk') || t.route.startsWith('/canh-bao') || t.route.startsWith('/excel-tool'))));
+
+          if (hisTabs.length > 0) {
+            hisTabs.forEach(hisTab => {
+              hisTab.title = titleName;
+              hisTab.account = {
+                username: username,
+                fullName: userInfo?.fullName || username,
+                companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+                phongName: defaultPhong?.name || '',
+                expiredTime: data.expiredTime,
+                accessToken: data.accessToken
+              };
+              hisTab.sid = sessionId;
+
+              const hisIframe = document.getElementById('frame-' + hisTab.id);
+              if (hisIframe) {
+                const hisOrigin = getTabOrigin(hisTab.subdomain);
+                const targetRoute = hisTab.route || route || '/new/his/ngoaitru/tnkb/tiepnhan';
+                hisIframe.src = `${hisOrigin}/init-session?sid=${encodeURIComponent(sessionId)}&route=${encodeURIComponent(targetRoute)}&_t=${Date.now()}`;
+              }
+            });
           } else {
+            // Nếu chưa có tab HIS nào đang mở, tự động tạo tab HIS cho đơn vị vừa đăng nhập
+            tabCounter++;
+            const newHisTabId = 'tab_' + Date.now();
+            const subdomain = 't' + tabCounter;
+            const newHisTab = {
+              id: newHisTabId,
+              subdomain: subdomain,
+              title: titleName,
+              account: {
+                username: username,
+                fullName: userInfo?.fullName || username,
+                companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+                phongName: defaultPhong?.name || '',
+                expiredTime: data.expiredTime,
+                accessToken: data.accessToken
+              },
+              sid: sessionId,
+              route: route
+            };
+            tabs.unshift(newHisTab);
+            createTabIframe(newHisTabId, subdomain, sessionId, route, data.accessToken);
+          }
+
+          // Cập nhật lại src cho iframe của tab công cụ hiện tại nếu cần
+          const toolIframe = document.getElementById('frame-' + currentTab.id);
+          if (toolIframe) {
+            if (currentTab.route.startsWith('/lien-thong-ksk')) {
+              toolIframe.src = `/lien-thong-ksk?token=${encodeURIComponent(data.accessToken)}`;
+            } else if (currentTab.route.startsWith('/canh-bao')) {
+              toolIframe.src = `/canh-bao?token=${encodeURIComponent(data.accessToken)}`;
+            }
+          }
+        } else {
+          // TRƯỜNG HỢP 2: ĐANG Ở TAB HIS THÔNG THƯỜNG (Khám bệnh, Tiếp nhận...):
+          currentTab.title = titleName;
+          currentTab.account = {
+            username: username,
+            fullName: userInfo?.fullName || username,
+            companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+            phongName: defaultPhong?.name || '',
+            expiredTime: data.expiredTime,
+            accessToken: data.accessToken
+          };
+          currentTab.sid = sessionId;
+          currentTab.route = route;
+
+          const iframe = document.getElementById('frame-' + currentTab.id);
+          if (iframe) {
             const targetOrigin = getTabOrigin(currentTab.subdomain);
             iframe.src = `${targetOrigin}/init-session?sid=${encodeURIComponent(sessionId)}&route=${encodeURIComponent(route)}&_t=${Date.now()}`;
           }
+
+          // Đồng bộ thông tin account sang các tab công cụ nếu đang mở
+          tabs.forEach(t => {
+            if (t.type === 'ksk' || t.id.startsWith('tab_ksk_') || t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_') || t.type === 'excel' || t.id.startsWith('tab_excel_')) {
+              t.account = { ...currentTab.account };
+              t.sid = sessionId;
+            }
+          });
         }
 
-        // Đồng bộ token sang mọi tab Liên thông KSK & Cảnh báo đang mở
+        // Luôn đồng bộ Token sang tất cả iframe Cấu hình liên thông & Cảnh báo đang mở qua postMessage
         const kskIframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"]');
         kskIframes.forEach(f => {
           try {
@@ -2650,6 +2709,7 @@
         });
 
         renderTabsBar();
+        updateSessionBadge(currentTab.account);
         showToast(`Đã nạp thành công: ${currentTab.account.fullName} (${currentTab.account.companyName})`, 'success');
       } catch (err) {
         console.error('Lỗi nạp phiên:', err);
@@ -2697,6 +2757,20 @@
         createTabIframe(newTabId, subdomain, sessionId, route, data.accessToken);
         activeTabId = newTabId;
 
+        // Đồng bộ token sang các tab công cụ nếu đang mở
+        const kskIframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"]');
+        kskIframes.forEach(f => {
+          try {
+            f.contentWindow.postMessage({ type: 'SET_TOKEN', token: data.accessToken, username: username }, '*');
+          } catch(e) {}
+        });
+        tabs.forEach(t => {
+          if (t.type === 'ksk' || t.id.startsWith('tab_ksk_') || t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_') || t.type === 'excel' || t.id.startsWith('tab_excel_')) {
+            t.account = { ...newTab.account };
+            t.sid = sessionId;
+          }
+        });
+
         renderTabsBar();
         showToast(`Đã mở Tab mới: ${tabTitle}!`, 'success');
       } catch (err) {
@@ -2709,12 +2783,13 @@
 
     // Mở Tab riêng cho Cấu hình Liên thông KSK / ĐTĐT / Viện phí
     function openKskTab() {
-      const existing = tabs.find(t => t.type === 'ksk' || t.id.startsWith('tab_ksk_'));
+      const existing = tabs.find(t => t.type === 'ksk' || t.id.startsWith('tab_ksk_') || (t.route && t.route.startsWith('/lien-thong-ksk')));
+      const currentActive = tabs.find(t => t.id === activeTabId);
 
       if (existing) {
         switchTab(existing.id);
         const iframe = document.getElementById('frame-' + existing.id);
-        const bestTok = tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
+        const bestTok = currentActive?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
         if (iframe) {
           const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
           const targetSrc = `/lien-thong-ksk${tQuery}`;
@@ -2808,12 +2883,13 @@
 
     // Mở Tab riêng cho Cảnh Báo Đơn Vị (Bệnh nhân chưa duyệt BHYT, KSK, Dược VTTH, v.v.)
     function openCanhBaoTab() {
-      const existing = tabs.find(t => t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_'));
+      const existing = tabs.find(t => t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_') || (t.route && t.route.startsWith('/canh-bao')));
+      const currentActive = tabs.find(t => t.id === activeTabId);
 
       if (existing) {
         switchTab(existing.id);
         const iframe = document.getElementById('frame-' + existing.id);
-        const bestTok = tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
+        const bestTok = currentActive?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
         if (iframe) {
           const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
           const targetSrc = `/canh-bao${tQuery}`;
