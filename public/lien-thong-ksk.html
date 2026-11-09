@@ -3148,7 +3148,7 @@
 
       const startTime = Date.now();
       const proxyBase = (window.location.protocol === 'file:' || !window.location.host)
-        ? 'http://localhost:3001'
+        ? 'http://localhost:8888'
         : '';
 
       try {
@@ -3504,12 +3504,29 @@
       let rawText = '';
       let duration = 0;
       let isSuccess = false;
-      let usedProxy = false;
+      let usedProxy = true;
+
+      const proxyBase = (window.location.protocol === 'file:' || !window.location.host) 
+        ? 'http://localhost:8888' 
+        : '';
 
       try {
         let response;
         try {
-          // Direct fetch from browser (CORS allowed on api.emrhub.vn)
+          // Ưu tiên gọi qua Proxy server (giống Postman, không bị Kong API Gateway của EMRHub chặn 403 Forbidden: Invalid CORS request do trình duyệt tự gửi header Origin)
+          log(`[Test KSK API] Gửi yêu cầu qua Proxy Server (mô phỏng Postman, vượt rào cản CORS)...`, 'info');
+          response = await fetch(`${proxyBase}/api/test-ksk-login`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({ url: targetUrl, username, password })
+          });
+        } catch (proxyErr) {
+          // Fallback sang gọi trực tiếp nếu proxy không khả dụng (ví dụ mở file offline không có server)
+          log(`[Test KSK API] Proxy server không phản hồi (${proxyErr.message}), thử gửi trực tiếp từ trình duyệt...`, 'warning');
+          usedProxy = false;
           response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
@@ -3517,18 +3534,6 @@
               'Accept': 'application/json'
             },
             body: JSON.stringify({ username, password })
-          });
-        } catch (fetchErr) {
-          // Fallback to local server proxy if direct fetch is blocked
-          log(`[Test KSK API] Kết nối trực tiếp gặp lỗi (${fetchErr.message}), chuyển sang qua Proxy server...`, 'warning');
-          usedProxy = true;
-          const proxyBase = (window.location.protocol === 'file:' || !window.location.host) 
-            ? 'http://localhost:3001' 
-            : '';
-          response = await fetch(`${proxyBase}/api/test-ksk-login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: targetUrl, username, password })
           });
         }
 
@@ -3635,6 +3640,7 @@
         const errMsg = (res.data && res.data.header && res.data.header.res_msg) ||
                        (res.data && res.data.message) ||
                        (res.data && res.data.error) ||
+                       (res.data && typeof res.data.raw === 'string' && res.data.raw.trim()) ||
                        'Tài khoản hoặc mật khẩu không chính xác.';
         subtitle.innerText = `Phản hồi từ API: ${errMsg}`;
 

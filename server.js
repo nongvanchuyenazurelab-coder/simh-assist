@@ -776,7 +776,7 @@ const server = http.createServer(async (req, res) => {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
             'Content-Length': Buffer.byteLength(postData),
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Antigravity-KSK/1.0'
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36'
           }
         }, (proxyRes) => {
           let responseData = '';
@@ -791,6 +791,10 @@ const server = http.createServer(async (req, res) => {
             });
             res.end(responseData);
           });
+        });
+
+        proxyReq.setTimeout(15000, () => {
+          proxyReq.destroy(new Error('Hết thời gian chờ kết nối tới EMRHub (15s timeout)'));
         });
 
         proxyReq.on('error', (err) => {
