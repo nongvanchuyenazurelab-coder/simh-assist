@@ -1793,12 +1793,12 @@
                 Cấu Hình Mẫu In Bảng Kê Chi Phí Khám Chữa Bệnh (dmcbaocao)
                 <span class="text-[11px] bg-teal-100 text-teal-800 px-2 py-0.5 rounded-full font-mono font-semibold">Công Văn 697 & BHYT</span>
               </h2>
-              <p class="text-xs text-slate-500">Quản lý templateCode/tempCode các mẫu in bảng kê BHYT, Dịch vụ, Hao phí để hiển thị đúng mẫu & chức danh chữ ký</p>
+              <p class="text-xs text-slate-500">Chỉ hiển thị và chỉnh sửa các mẫu in bảng kê đang sử dụng (trangThai = 1). Các mẫu đã tắt được ẩn để quản lý chính xác.</p>
             </div>
           </div>
 
           <div class="flex items-center gap-2">
-            <span class="text-xs font-medium text-slate-500">Tổng mẫu:</span>
+            <span class="text-xs font-medium text-slate-500">Mẫu đang dùng:</span>
             <span id="dispBangKeCount" class="text-xs font-mono font-bold text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded border border-teal-200">0 mẫu</span>
             <span class="text-slate-300">|</span>
             <button type="button" onclick="fetchBangKeConfig()" class="px-2.5 py-1 text-xs font-medium text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-lg transition" title="Tải lại danh sách bảng kê">
@@ -1816,18 +1816,18 @@
               </div>
               <div>
                 <h3 class="text-xs font-bold text-teal-950 uppercase tracking-wider">Mẫu Gợi Ý Chuẩn Theo Công Văn 697 (Có Chức Danh & Khối Chữ Ký)</h3>
-                <p class="text-[11px] text-teal-800">Tự động cấu hình chuẩn theo khuyến nghị cho 4 mã báo cáo chính</p>
+                <p class="text-[11px] text-teal-800">Tự động cấu hình chuẩn theo khuyến nghị cho các mẫu bảng kê đang sử dụng</p>
               </div>
             </div>
 
             <div class="flex items-center gap-2">
               <button type="button" onclick="applyAllSuggestedBangKe()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-teal-600 hover:bg-teal-700 rounded-xl transition shadow-sm shadow-teal-600/30">
                 <i class="fa-solid fa-bolt"></i>
-                <span>Điền Tất Cả 4 Mẫu Gợi Ý</span>
+                <span>Điền Mẫu Gợi Ý Đang Sử Dụng</span>
               </button>
               <button type="button" onclick="confirmUpdateAllBangKe()" class="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 rounded-xl transition shadow-sm">
                 <i class="fa-solid fa-cloud-arrow-up"></i>
-                <span>Lưu Tất Cả (Bulk PUT)</span>
+                <span>Lưu Cấu Hình Đang Sử Dụng (PUT)</span>
               </button>
             </div>
           </div>
@@ -1892,16 +1892,16 @@
         <div class="flex flex-wrap items-center justify-between gap-3 text-xs bg-slate-50/80 p-3 rounded-xl border border-slate-200">
           <div class="flex flex-wrap items-center gap-2">
             <span class="text-slate-500 font-medium">Bộ lọc:</span>
-            <button type="button" id="btnFilterBangKeAll" onclick="setBangKeFilter('all')" class="px-2.5 py-1 rounded-lg font-semibold bg-teal-600 text-white transition shadow-xs">
+            <button type="button" id="btnFilterBangKeActive" onclick="setBangKeFilter('active')" class="px-2.5 py-1 rounded-lg font-semibold bg-teal-600 text-white transition shadow-xs" title="Chỉ hiển thị và chỉnh sửa các cấu hình đang sử dụng">
+              <i class="fa-solid fa-circle-check mr-1 text-[11px]"></i> Đang sử dụng (Bật)
+            </button>
+            <button type="button" id="btnFilterBangKeAll" onclick="setBangKeFilter('all')" class="px-2.5 py-1 rounded-lg font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Hiển thị tất cả (bao gồm cả các mẫu đã tắt)">
               Tất cả
             </button>
-            <button type="button" id="btnFilterBangKeActive" onclick="setBangKeFilter('active')" class="px-2.5 py-1 rounded-lg font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
-              Đang sử dụng (Bật)
-            </button>
-            <button type="button" id="btnFilterBangKeInactive" onclick="setBangKeFilter('inactive')" class="px-2.5 py-1 rounded-lg font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+            <button type="button" id="btnFilterBangKeInactive" onclick="setBangKeFilter('inactive')" class="px-2.5 py-1 rounded-lg font-semibold bg-slate-100 text-slate-600 hover:bg-slate-200 transition" title="Chỉ xem các mẫu đã tắt không sử dụng">
               Đã tắt
             </button>
-            <button type="button" id="btnFilterBangKeSuggested" onclick="setBangKeFilter('suggested')" class="px-2.5 py-1 rounded-lg font-semibold bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200 transition" title="Chỉ hiển thị 4 mã báo cáo trong danh sách gợi ý chuẩn">
+            <button type="button" id="btnFilterBangKeSuggested" onclick="setBangKeFilter('suggested')" class="px-2.5 py-1 rounded-lg font-semibold bg-teal-50 text-teal-800 hover:bg-teal-100 border border-teal-200 transition" title="Chỉ hiển thị 4 mã báo cáo trong danh sách gợi ý chuẩn đang dùng">
               <i class="fa-solid fa-star text-amber-500 mr-1 text-[10px]"></i> 4 Mẫu Chuẩn Gợi Ý
             </button>
           </div>
@@ -1938,11 +1938,11 @@
           <div class="flex items-center gap-3">
             <button type="button" onclick="applyAllSuggestedBangKe()" class="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 rounded-xl transition">
               <i class="fa-solid fa-wand-magic-sparkles"></i>
-              <span>Điền 4 Mẫu Gợi Ý</span>
+              <span>Điền Mẫu Gợi Ý Đang Dùng</span>
             </button>
-            <button type="button" onclick="confirmUpdateAllBangKe()" class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 rounded-xl transition shadow-md shadow-teal-600/25" title="Lưu các mẫu bảng kê đã chỉnh sửa lên máy chủ">
+            <button type="button" onclick="confirmUpdateAllBangKe()" class="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-teal-600 to-indigo-600 hover:from-teal-700 hover:to-indigo-700 rounded-xl transition shadow-md shadow-teal-600/25" title="Lưu các mẫu bảng kê đang sử dụng đã chỉnh sửa lên máy chủ">
               <i class="fa-solid fa-cloud-arrow-up" id="iconUpdateAllBangKe"></i>
-              <span>Cập nhật Các Mẫu Bảng Kê (PUT)</span>
+              <span>Cập nhật Mẫu Đang Dùng (PUT)</span>
             </button>
           </div>
         </div>
@@ -2393,7 +2393,7 @@
     let duocTempSecondsLeft = 0;
     let duocTempOriginalVal = '0';
     let currentBangKeList = [];   // Danh mục mẫu in bảng kê (dmcbaocao)
-    let currentBangKeFilter = 'all'; // 'all' | 'active' | 'inactive' | 'suggested'
+    let currentBangKeFilter = 'active'; // 'active' (mặc định: chỉ hiển thị & sửa cấu hình đang sử dụng) | 'all' | 'inactive' | 'suggested'
     let currentPhieuInData = null; // Kết quả bóc dữ liệu phiếu in (phieuin/data)
     let currentPhieuInFields = []; // Danh sách các trường đã bóc tách từ XML
     let currentActiveTab = 'ksk'; // 'ksk' | 'dtdt' | 'vpi' | 'emch' | 'duoc' | 'bangke' | 'phieuin'
@@ -5672,7 +5672,7 @@
       } else if (currentBangKeFilter === 'inactive') {
         filtered = currentBangKeList.filter(item => item.trangThai !== 1);
       } else if (currentBangKeFilter === 'suggested') {
-        filtered = currentBangKeList.filter(item => Boolean(BANG_KE_SUGGESTIONS[item.maBaoCao]));
+        filtered = currentBangKeList.filter(item => Boolean(BANG_KE_SUGGESTIONS[item.maBaoCao]) && item.trangThai === 1);
       }
 
       if (bangKeSearchKeyword) {
@@ -5686,17 +5686,17 @@
       }
 
       const activeTotal = currentBangKeList.filter(x => x.trangThai === 1).length;
-      if (badgeCount) badgeCount.innerText = `${currentBangKeList.length} mẫu (${activeTotal} bật)`;
-      if (tabBadge) tabBadge.innerText = `${activeTotal} bật`;
+      if (badgeCount) badgeCount.innerText = `${activeTotal} đang dùng / ${currentBangKeList.length} tổng`;
+      if (tabBadge) tabBadge.innerText = `${activeTotal} đang dùng`;
 
       if (filtered.length === 0) {
         container.innerHTML = `
           <div class="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-slate-500 text-xs space-y-2">
             <i class="fa-solid fa-filter-circle-xmark text-3xl text-slate-400 mb-1"></i>
             <div class="font-semibold text-slate-700">Không tìm thấy mẫu báo cáo nào khớp với điều kiện lọc</div>
-            <div class="text-slate-400 text-[11px]">Từ khóa: "${escapeHtml(bangKeSearchKeyword || '---')}" | Bộ lọc: ${currentBangKeFilter}</div>
-            <button type="button" onclick="clearBangKeSearch(); setBangKeFilter('all');" class="mt-2 px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 font-medium transition text-xs shadow-xs">
-              <i class="fa-solid fa-rotate-left mr-1"></i> Đặt lại bộ lọc & tìm kiếm
+            <div class="text-slate-400 text-[11px]">Từ khóa: "${escapeHtml(bangKeSearchKeyword || '---')}" | Bộ lọc: ${currentBangKeFilter === 'active' ? 'Đang sử dụng' : currentBangKeFilter}</div>
+            <button type="button" onclick="clearBangKeSearch(); setBangKeFilter('active');" class="mt-2 px-3 py-1 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg text-slate-700 font-medium transition text-xs shadow-xs">
+              <i class="fa-solid fa-rotate-left mr-1"></i> Đặt lại về mẫu đang sử dụng
             </button>
           </div>
         `;
@@ -5715,15 +5715,64 @@
         else if (item.maBaoCao === 'BANG_KE_HAOPHI') badgeTypeColor = 'bg-amber-100 text-amber-800 border-amber-200';
         else if (item.maBaoCao === 'BANG_KE') badgeTypeColor = 'bg-emerald-100 text-emerald-800 border-emerald-200';
 
+        // Nếu mẫu đã tắt: Hiển thị card cảnh báo trạng thái, không hiển thị ô sửa để tránh nhầm lẫn
+        if (!isActive) {
+          return `
+            <div id="cardBangKe_${item.id}" class="border border-slate-200 bg-slate-50/70 rounded-2xl p-4 shadow-xs transition-all duration-200 space-y-3 opacity-75">
+              <div class="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-slate-200">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg border bg-slate-100 text-slate-500 border-slate-300">
+                    ${item.maBaoCao}
+                  </span>
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 class="text-xs font-bold text-slate-700">${item.ten || 'Chưa đặt tên'}</h4>
+                      <span class="text-[10px] font-semibold px-2 py-0.2 rounded bg-slate-200 text-slate-600">Đã tắt (Không sử dụng)</span>
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-mono">
+                      ID: <strong class="text-slate-600">${item.id}</strong> | Cập nhật: ${item.ngaySua || item.ngayTao || '---'}
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <label class="inline-flex items-center gap-1.5 text-xs cursor-pointer">
+                    <input type="checkbox" id="chkBangKeActive_${item.id}" onchange="toggleCardActiveState(${item.id})" class="rounded text-teal-600 focus:ring-0">
+                    <span class="text-[11px] font-semibold text-slate-500">Bật sử dụng</span>
+                  </label>
+                  <span class="text-slate-200">|</span>
+                  <button type="button" onclick="previewSingleBangKe(${item.id})" class="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition" title="Xem trước gói tin JSON PUT">
+                    <i class="fa-solid fa-code mr-1"></i> Xem JSON
+                  </button>
+                </div>
+              </div>
+
+              <div class="bg-amber-50/80 border border-amber-200 rounded-xl p-3 text-xs text-amber-800 flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                  <span>Mẫu này hiện đang <strong>tắt</strong>. Bật checkbox "Bật sử dụng" nếu cần kích hoạt và chỉnh sửa.</span>
+                </div>
+                <span class="text-[11px] text-slate-500 font-mono">Template: ${escapeHtml(currentCode || '---')}</span>
+              </div>
+            </div>
+          `;
+        }
+
+        // Nếu mẫu đang sử dụng (trangThai = 1): Hiển thị đầy đủ form chỉnh sửa
         return `
-          <div id="cardBangKe_${item.id}" class="border ${isActive ? 'border-teal-200/80 bg-white' : 'border-slate-200 bg-slate-50/60 opacity-80'} rounded-2xl p-5 shadow-xs transition-all duration-200 space-y-4">
+          <div id="cardBangKe_${item.id}" class="border border-teal-200/80 bg-white rounded-2xl p-5 shadow-xs transition-all duration-200 space-y-4">
             <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div class="flex items-center gap-2.5">
                 <span class="text-xs font-mono font-bold px-2.5 py-1 rounded-lg border ${badgeTypeColor}">
                   ${item.maBaoCao}
                 </span>
                 <div>
-                  <h4 class="text-xs font-bold text-slate-900">${item.ten || 'Chưa đặt tên'}</h4>
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-xs font-bold text-slate-900">${item.ten || 'Chưa đặt tên'}</h4>
+                    <span class="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <i class="fa-solid fa-circle-check mr-0.5"></i> Đang sử dụng
+                    </span>
+                  </div>
                   <div class="text-[10px] text-slate-400 font-mono">
                     ID: <strong class="text-slate-600">${item.id}</strong> | Cập nhật: ${item.ngaySua || item.ngayTao || '---'}
                   </div>
@@ -5732,10 +5781,8 @@
 
               <div class="flex items-center gap-2">
                 <label class="inline-flex items-center gap-1.5 text-xs cursor-pointer">
-                  <input type="checkbox" id="chkBangKeActive_${item.id}" ${isActive ? 'checked' : ''} onchange="toggleCardActiveState(${item.id})" class="rounded text-teal-600 focus:ring-0">
-                  <span class="text-[11px] font-semibold ${isActive ? 'text-teal-700' : 'text-slate-400'}">
-                    ${isActive ? 'Đang bật' : 'Đã tắt'}
-                  </span>
+                  <input type="checkbox" id="chkBangKeActive_${item.id}" checked onchange="toggleCardActiveState(${item.id})" class="rounded text-teal-600 focus:ring-0">
+                  <span class="text-[11px] font-semibold text-teal-700">Đang bật</span>
                 </label>
                 <span class="text-slate-200">|</span>
                 <button type="button" onclick="previewSingleBangKe(${item.id})" class="px-2.5 py-1 text-xs font-medium text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-lg transition" title="Xem trước gói tin JSON PUT">
@@ -5759,7 +5806,7 @@
                   </label>
                   ${isSuggestedApplied ? `
                     <span class="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
-                      <i class="fa-solid fa-circle-check mr-1"></i> Đang khớp mẫu chuẩn
+                      <i class="fa-solid fa-circle-check mr-1"></i> Đang khớp mẫu chuẩn CV 697
                     </span>
                   ` : ''}
                 </div>
@@ -5774,7 +5821,7 @@
                 <!-- Suggestion pill button -->
                 ${suggested ? `
                   <div class="flex flex-wrap items-center gap-1.5 pt-0.5">
-                    <span class="text-[10px] text-slate-400">Gợi ý mẫu CV 697:</span>
+                    <span class="text-[10px] text-slate-400">Gợi ý chuẩn CV 697:</span>
                     <button type="button" onclick="setBangKeInputValue('inputTempCode_${item.id}', '${suggested}')" class="text-[11px] font-mono font-semibold px-2 py-0.5 rounded-lg border transition ${isSuggestedApplied ? 'bg-emerald-50 text-emerald-700 border-emerald-300' : 'bg-teal-50 hover:bg-teal-100 text-teal-800 border-teal-200'}">
                       <i class="fa-solid fa-wand-magic-sparkles mr-1 text-[10px]"></i> ${suggested}
                     </button>
@@ -5815,33 +5862,31 @@
 
     function toggleCardActiveState(id) {
       const chk = document.getElementById(`chkBangKeActive_${id}`);
-      const card = document.getElementById(`cardBangKe_${id}`);
-      if (chk && card) {
-        if (chk.checked) {
-          card.classList.remove('opacity-80', 'bg-slate-50/60');
-          card.classList.add('bg-white', 'border-teal-200/80');
-        } else {
-          card.classList.remove('bg-white', 'border-teal-200/80');
-          card.classList.add('opacity-80', 'bg-slate-50/60');
-        }
+      const item = currentBangKeList.find(x => x.id === id);
+      if (item && chk) {
+        item.trangThai = chk.checked ? 1 : 0;
+        renderBangKeList();
       }
     }
 
     function applySpecificSuggested(maBaoCao, suggestedCode) {
       let count = 0;
       currentBangKeList.forEach(item => {
-        if (item.maBaoCao === maBaoCao) {
+        // CHỈ áp dụng cho mẫu đang sử dụng (trangThai === 1)
+        if (item.maBaoCao === maBaoCao && item.trangThai === 1) {
           const input = document.getElementById(`inputTempCode_${item.id}`);
           if (input) {
             input.value = suggestedCode;
+            input.classList.add('bg-teal-50', 'border-teal-400');
+            setTimeout(() => input.classList.remove('bg-teal-50', 'border-teal-400'), 2000);
             count++;
           }
         }
       });
       if (count > 0) {
-        showToast('Đã áp dụng mẫu', `Đã áp dụng ${suggestedCode} cho mã ${maBaoCao}. Hãy bấm "Lưu (PUT)" để lưu.`, 'success');
+        showToast('Đã áp dụng mẫu', `Đã áp dụng ${suggestedCode} cho mã ${maBaoCao} đang sử dụng. Hãy bấm "Lưu (PUT)" để lưu.`, 'success');
       } else {
-        showToast('Không tìm thấy', `Không tìm thấy mẫu nào có mã ${maBaoCao} trong danh sách hiện tại.`, 'warning');
+        showToast('Không tìm thấy', `Không tìm thấy mẫu nào có mã ${maBaoCao} đang sử dụng trong danh sách hiện tại.`, 'warning');
       }
     }
 
@@ -5849,10 +5894,8 @@
       let count = 0;
       Object.keys(BANG_KE_SUGGESTIONS).forEach(code => {
         const suggested = BANG_KE_SUGGESTIONS[code];
-        const matching = currentBangKeList.filter(i => i.maBaoCao === code);
-        const targetItems = matching.filter(i => i.trangThai === 1).length > 0
-          ? matching.filter(i => i.trangThai === 1)
-          : matching;
+        // CHỈ tìm các mẫu có mã code VÀ đang sử dụng (trangThai === 1)
+        const targetItems = currentBangKeList.filter(i => i.maBaoCao === code && i.trangThai === 1);
 
         targetItems.forEach(item => {
           const input = document.getElementById(`inputTempCode_${item.id}`);
@@ -5866,9 +5909,9 @@
       });
 
       if (count > 0) {
-        showAlert('Đã điền 4 mẫu gợi ý chuẩn', `Đã tự động điền mẫu gợi ý cho ${count} bản ghi bảng kê. Bấm "Lưu Tất Cả (Bulk PUT)" để cập nhật lên máy chủ.`, 'success');
+        showAlert('Đã điền các mẫu gợi ý chuẩn', `Đã tự động điền mẫu gợi ý cho ${count} mẫu bảng kê đang sử dụng. Bấm "Cập nhật Mẫu Đang Dùng (PUT)" để lưu lên máy chủ.`, 'success');
       } else {
-        showAlert('Chưa tải danh sách', 'Chưa có danh sách mẫu bảng kê. Vui lòng bấm "Tải lại danh sách" trước.', 'warning');
+        showAlert('Chưa tìm thấy mẫu', 'Không tìm thấy mẫu bảng kê đang sử dụng nào thuộc 4 mã gợi ý chuẩn trong danh sách.', 'warning');
       }
     }
 
@@ -5950,10 +5993,11 @@
 
         if (response.ok && (result.code === 0 || result.code === 200 || result.status === 'OK')) {
           log(`[PUT-BẢNG_KÊ] Cập nhật thành công ID ${id} (${payload.maBaoCao || ''})!`, 'success');
-          showAlert('Cập nhật mẫu thành công!', `Mẫu ${payload.maBaoCao || ''} (ID: ${id}) đã được đổi thành ${payload.tempCode}.`, 'success');
+          showAlert('Cập nhật mẫu thành công!', `Mẫu ${payload.maBaoCao || ''} (ID: ${id}) đã được lưu thành ${payload.tempCode}.`, 'success');
           const idx = currentBangKeList.findIndex(x => x.id === id);
           if (idx !== -1) {
             currentBangKeList[idx] = { ...currentBangKeList[idx], ...payload };
+            renderBangKeList();
           }
           return true;
         } else {
@@ -5977,9 +6021,13 @@
 
       const itemsToUpdate = [];
       currentBangKeList.forEach(item => {
+        // CHỈ kiểm tra và lưu các mẫu bảng kê đang sử dụng (trangThai === 1 hoặc đang được bật trên giao diện)
+        const chkActive = document.getElementById(`chkBangKeActive_${item.id}`);
+        const isNowActive = chkActive ? chkActive.checked : (item.trangThai === 1);
+        if (!isNowActive && item.trangThai !== 1) return;
+
         const inputTemp = document.getElementById(`inputTempCode_${item.id}`);
         const inputGhiChu = document.getElementById(`inputGhiChu_${item.id}`);
-        const chkActive = document.getElementById(`chkBangKeActive_${item.id}`);
 
         if (inputTemp) {
           const newCode = inputTemp.value.trim();
@@ -5988,23 +6036,23 @@
           const origGhiChu = item.ghiChu || '';
           const newActive = chkActive ? (chkActive.checked ? 1 : 0) : item.trangThai;
 
-          if (newCode !== origCode || newGhiChu !== origGhiChu || newActive !== item.trangThai || Object.keys(BANG_KE_SUGGESTIONS).includes(item.maBaoCao)) {
+          if (newCode !== origCode || newGhiChu !== origGhiChu || newActive !== item.trangThai) {
             itemsToUpdate.push(item);
           }
         }
       });
 
       if (itemsToUpdate.length === 0) {
-        showAlert('Không có thay đổi', 'Các mẫu bảng kê hiện tại chưa có thay đổi nào cần lưu.', 'info');
+        showAlert('Không có thay đổi', 'Các mẫu bảng kê đang sử dụng chưa có thay đổi nào cần lưu.', 'info');
         return;
       }
 
       const summaryList = itemsToUpdate.map(i => {
         const input = document.getElementById(`inputTempCode_${i.id}`);
-        return `• [ID ${i.id}] ${i.maBaoCao} -> ${input ? input.value : ''}`;
+        return `• [ID ${i.id}] ${i.maBaoCao} -> ${input ? input.value : (i.tempCode || i.templateCode)}`;
       }).join('\n');
 
-      if (!confirm(`Bạn có chắc chắn muốn CẬP NHẬT ${itemsToUpdate.length} mẫu bảng kê lên hệ thống?\n\n${summaryList}`)) {
+      if (!confirm(`Bạn có chắc chắn muốn CẬP NHẬT ${itemsToUpdate.length} mẫu bảng kê đang sử dụng lên hệ thống?\n\n${summaryList}`)) {
         return;
       }
 
@@ -6026,7 +6074,7 @@
       if (topIcon) topIcon.className = 'fa-solid fa-cloud-arrow-up';
 
       if (failCount === 0) {
-        showAlert('Hoàn thành cập nhật tất cả mẫu!', `Đã lưu thành công ${successCount}/${itemsToUpdate.length} mẫu bảng kê lên máy chủ.`, 'success');
+        showAlert('Hoàn thành cập nhật tất cả mẫu!', `Đã lưu thành công ${successCount}/${itemsToUpdate.length} mẫu bảng kê đang sử dụng lên máy chủ.`, 'success');
       } else {
         showAlert('Cập nhật một phần', `Thành công: ${successCount}, Thất bại: ${failCount}. Xem chi tiết trong log.`, 'warning');
       }
