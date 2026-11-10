@@ -96,7 +96,7 @@
             <i class="fa-solid fa-filter text-amber-500"></i>
             Bộ Lọc Thời Gian Quét Cảnh Báo Toàn Đơn Vị
           </h2>
-          <p class="text-xs text-slate-500 mt-0.5">Quét đồng thời trạng thái Duyệt BHYT (Viện phí) và Duyệt phát thuốc ngoại trú (Kho dược)</p>
+          <p class="text-xs text-slate-500 mt-0.5">Quét đồng thời Tiếp nhận & Trạng thái khám, Duyệt BHYT (Viện phí) và Duyệt phát thuốc ngoại trú (Kho dược)</p>
         </div>
 
         <!-- Quick filter range buttons -->
@@ -175,6 +175,51 @@
           </label>
         </div>
       </div>
+    </div>
+
+    <!-- Thanh tóm tắt cảnh báo nhanh (Hiển thị tức thì toàn đơn vị) -->
+    <div id="quickAlertSummaryBar" class="bg-white rounded-2xl shadow-xs border border-slate-200 px-4 py-2.5 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 mr-1 flex items-center gap-1.5">
+          <i class="fa-solid fa-bolt text-amber-500"></i>
+          Tổng hợp nhanh:
+        </span>
+
+        <button type="button" onclick="openTiepNhanModal('all')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-semibold transition cursor-pointer" title="Xem toàn bộ danh sách bệnh nhân đã tiếp nhận">
+          <i class="fa-solid fa-clipboard-user text-sky-600"></i>
+          <span>Tiếp nhận:</span>
+          <b id="quickTiepNhanTotal" class="font-extrabold">0</b>
+        </button>
+
+        <button type="button" id="btnQuickTiepNhanUnfinished" onclick="openTiepNhanModal('unfinished')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer" title="Xem danh sách bệnh nhân đã tiếp nhận nhưng chưa kết thúc khám">
+          <i class="fa-solid fa-user-clock text-rose-500"></i>
+          <span>Chưa kết thúc khám:</span>
+          <b id="quickTiepNhanUnfinished" class="font-extrabold">0</b>
+        </button>
+
+        <button type="button" id="btnQuickUnapprovedBh" onclick="openDetailModal('unapproved')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer" title="Xem danh sách chưa duyệt BHYT">
+          <i class="fa-solid fa-file-invoice-dollar text-rose-500"></i>
+          <span>Chưa duyệt BH:</span>
+          <b id="quickUnapprovedBh" class="font-extrabold">0</b>
+        </button>
+
+        <button type="button" id="btnQuickPharmUnapproved" onclick="openPharmacyModal('unapproved')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer" title="Xem phiếu thuốc chờ duyệt phát">
+          <i class="fa-solid fa-pills text-rose-500"></i>
+          <span>Thuốc chờ duyệt:</span>
+          <b id="quickPharmUnapproved" class="font-extrabold">0</b>
+        </button>
+
+        <button type="button" id="btnQuickPharmDiffMonth" onclick="openPharmacyModal('diffMonth')" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 font-semibold transition cursor-pointer" title="Xem phiếu thuốc duyệt khác tháng">
+          <i class="fa-solid fa-calendar-xmark text-amber-500"></i>
+          <span>Thuốc lệch tháng:</span>
+          <b id="quickPharmDiffMonth" class="font-extrabold">0</b>
+        </button>
+      </div>
+
+      <a href="#sectionTiepNhan" class="text-[11px] font-semibold text-sky-700 hover:text-sky-900 hover:underline flex items-center gap-1">
+        <span>Tới mục Tiếp nhận & Khám bệnh</span>
+        <i class="fa-solid fa-arrow-down text-[10px]"></i>
+      </a>
     </div>
 
     <!-- ========================================== -->
@@ -486,6 +531,144 @@
 
             <div class="mt-4 pt-2 flex items-center justify-between text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">
               <span>Xem danh sách đơn thuốc đã duyệt</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- =================================================== -->
+    <!-- PHẦN 3: CẢNH BÁO TIẾP NHẬN & CHƯA KẾT THÚC KHÁM BỆNH -->
+    <!-- =================================================== -->
+    <div id="sectionTiepNhan" class="space-y-3 pt-2">
+      <div class="flex items-center justify-between">
+        <h2 class="text-xs font-bold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+          <span>3. Phân Hệ Tiếp Nhận & Trạng Thái Khám Bệnh</span>
+        </h2>
+        <span class="text-xs text-slate-400">Thống kê lượt tiếp nhận và phát hiện hồ sơ đã tiếp nhận nhưng chưa kết thúc khám</span>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+        <!-- CARD 3.1: TIẾP NHẬN NHƯNG CHƯA KẾT THÚC KHÁM (MAIN ALERT) -->
+        <div id="cardTiepNhanUnfinished" onclick="openTiepNhanModal('unfinished')" class="cursor-pointer group relative bg-white rounded-2xl shadow-xs border-2 border-rose-200 hover:border-rose-400 transition-all duration-200 overflow-hidden hover:shadow-md">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-rose-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+          <div class="p-6 relative">
+            <div class="flex items-center justify-between">
+              <div class="w-11 h-11 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-lg shadow-xs">
+                <i class="fa-solid fa-user-clock"></i>
+              </div>
+              <span id="badgeTiepNhanUnfinishedStatus" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span>Chưa quét dữ liệu</span>
+              </span>
+            </div>
+
+            <div class="mt-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Tiếp Nhận Chưa Kết Thúc Khám</p>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span id="statTiepNhanUnfinishedCount" class="text-4xl sm:text-5xl font-black text-rose-600">0</span>
+                <span class="text-sm font-semibold text-slate-600">bệnh nhân</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Đã tiếp nhận khám nhưng chưa bấm Kết thúc khám bệnh (Chờ khám / Đang khám)</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-slate-400 block text-[11px]">Chờ khám (Chưa vào):</span>
+                <span id="statTiepNhanWaitingCount" class="font-bold text-amber-600 text-sm">0 ca</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px]">Đang khám / Khác:</span>
+                <span id="statTiepNhanExaminingCount" class="font-bold text-rose-600 text-sm">0 ca</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-2 flex items-center justify-between text-xs font-bold text-rose-600 group-hover:translate-x-1 transition-transform">
+              <span>Bấm xem danh sách chưa kết thúc</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3.2: TỔNG SỐ BỆNH NHÂN TIẾP NHẬN -->
+        <div id="cardTiepNhanTotal" onclick="openTiepNhanModal('all')" class="cursor-pointer group relative bg-white rounded-2xl shadow-xs border-2 border-sky-200 hover:border-sky-400 transition-all duration-200 overflow-hidden hover:shadow-md">
+          <div class="absolute top-0 right-0 w-32 h-32 bg-sky-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+          <div class="p-6 relative">
+            <div class="flex items-center justify-between">
+              <div class="w-11 h-11 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-lg shadow-xs">
+                <i class="fa-solid fa-clipboard-user"></i>
+              </div>
+              <span id="badgeTiepNhanTotalStatus" class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-sky-100 text-sky-800 border border-sky-200">
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                <span>Tổng lượt tiếp nhận</span>
+              </span>
+            </div>
+
+            <div class="mt-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Số Bệnh Nhân Tiếp Nhận</p>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span id="statTiepNhanTotalCount" class="text-4xl sm:text-5xl font-black text-sky-600">0</span>
+                <span class="text-sm font-semibold text-slate-600">bệnh nhân</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Tổng lượt đăng ký tiếp nhận phát sinh trong khoảng ngày tiếp nhận</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-slate-400 block text-[11px]">Đối tượng BHYT:</span>
+                <span id="statTiepNhanBhytCount" class="font-bold text-sky-700 text-sm">0 ca</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px]">Thu phí / Miễn phí / Khác:</span>
+                <span id="statTiepNhanOtherCount" class="font-bold text-slate-700 text-sm">0 ca</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-2 flex items-center justify-between text-xs font-bold text-sky-600 group-hover:translate-x-1 transition-transform">
+              <span>Bấm xem toàn bộ DS tiếp nhận</span>
+              <i class="fa-solid fa-arrow-right"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- CARD 3.3: ĐÃ KẾT THÚC KHÁM BỆNH -->
+        <div id="cardTiepNhanFinished" onclick="openTiepNhanModal('finished')" class="cursor-pointer group relative bg-white rounded-2xl shadow-xs border border-emerald-200 hover:border-emerald-400 transition-all duration-200 overflow-hidden hover:shadow-md">
+          <div class="p-6">
+            <div class="flex items-center justify-between">
+              <div class="w-11 h-11 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-lg shadow-xs">
+                <i class="fa-solid fa-user-check"></i>
+              </div>
+              <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
+                Đã kết thúc khám
+              </span>
+            </div>
+
+            <div class="mt-4">
+              <p class="text-xs font-semibold uppercase tracking-wider text-slate-500">Đã Kết Thúc Khám Bệnh</p>
+              <div class="flex items-baseline gap-2 mt-1">
+                <span id="statTiepNhanFinishedCount" class="text-4xl sm:text-5xl font-black text-emerald-600">0</span>
+                <span class="text-sm font-semibold text-slate-600">hồ sơ</span>
+              </div>
+              <p class="text-xs text-slate-500 mt-1">Hồ sơ đã hoàn tất khám, có xử trí và ghi nhận ngày ra viện</p>
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-100 grid grid-cols-2 gap-2 text-xs">
+              <div>
+                <span class="text-slate-400 block text-[11px]">Tỷ lệ kết thúc:</span>
+                <span id="statTiepNhanFinishPercent" class="font-bold text-emerald-700 text-sm">0%</span>
+              </div>
+              <div>
+                <span class="text-slate-400 block text-[11px]">BHYT chưa kết thúc:</span>
+                <span id="statTiepNhanBhytUnfinishedCount" class="font-bold text-rose-600 text-sm">0 ca</span>
+              </div>
+            </div>
+
+            <div class="mt-4 pt-2 flex items-center justify-between text-xs font-bold text-emerald-600 group-hover:translate-x-1 transition-transform">
+              <span>Xem danh sách đã kết thúc khám</span>
               <i class="fa-solid fa-arrow-right"></i>
             </div>
           </div>
@@ -841,6 +1024,114 @@
     </div>
   </div>
 
+  <!-- ========================================================================= -->
+  <!-- MODAL 4: CHI TIẾT BỆNH NHÂN TIẾP NHẬN & CHƯA KẾT THÚC KHÁM                -->
+  <!-- ========================================================================= -->
+  <div id="tiepNhanDetailModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+
+      <!-- Modal Header -->
+      <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
+        <div class="flex items-center gap-3">
+          <div id="modalTiepNhanHeaderIcon" class="w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base font-bold shadow-xs">
+            <i class="fa-solid fa-user-clock"></i>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <h3 id="modalTiepNhanTitle" class="text-base font-bold text-slate-900">Danh Sách Bệnh Nhân Tiếp Nhận Chưa Kết Thúc Khám</h3>
+              <span id="modalTiepNhanBadgeCount" class="px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-500 text-white">0</span>
+            </div>
+            <p id="modalTiepNhanSubtitle" class="text-xs text-slate-500">Khoảng ngày tiếp nhận: từ ... đến ...</p>
+          </div>
+        </div>
+
+        <button type="button" onclick="closeTiepNhanModal()" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-200 flex items-center justify-center text-lg transition">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Filter & Search Bar inside Modal -->
+      <div class="px-6 py-3 border-b border-slate-100 bg-white flex flex-col lg:flex-row items-center justify-between gap-3">
+        <!-- Filter Tabs -->
+        <div class="inline-flex flex-wrap p-1 bg-slate-100 rounded-xl text-xs font-semibold w-full lg:w-auto">
+          <button type="button" id="tabTiepNhanUnfinished" onclick="switchTiepNhanFilter('unfinished')" class="px-3 py-1.5 rounded-lg bg-white text-rose-600 font-bold shadow-xs transition">⚠️ Chưa kết thúc khám</button>
+          <button type="button" id="tabTiepNhanWaiting" onclick="switchTiepNhanFilter('waiting')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">⏳ Chờ khám</button>
+          <button type="button" id="tabTiepNhanExamining" onclick="switchTiepNhanFilter('examining')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">🩺 Đang khám</button>
+          <button type="button" id="tabTiepNhanFinished" onclick="switchTiepNhanFilter('finished')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">✅ Đã kết thúc</button>
+          <button type="button" id="tabTiepNhanAll" onclick="switchTiepNhanFilter('all')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition">📋 Tất cả tiếp nhận</button>
+        </div>
+
+        <!-- Search input & Action buttons -->
+        <div class="flex items-center gap-2 w-full lg:w-auto">
+          <div class="relative flex-1 sm:w-64">
+            <input type="text" id="modalTiepNhanSearchInput" oninput="renderTiepNhanFilteredTable()" placeholder="Tìm Mã BA, Tên BN, SĐT, Thẻ BHYT, Phòng..." class="w-full px-3 py-1.5 pl-8 text-xs bg-slate-50 border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-sky-500 focus:bg-white">
+            <i class="fa-solid fa-magnifying-glass absolute left-2.5 top-2.5 text-slate-400 text-xs"></i>
+          </div>
+
+          <button type="button" onclick="copyAllTiepNhanMaBA()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition flex items-center gap-1.5 shrink-0" title="Sao chép toàn bộ danh sách Mã Bệnh Án đang hiển thị">
+            <i class="fa-regular fa-copy text-slate-500"></i>
+            <span>Copy Mã BA</span>
+          </button>
+
+          <button type="button" onclick="exportTiepNhanToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg shadow-xs transition flex items-center gap-1.5 shrink-0" title="Tải file Excel danh sách tiếp nhận">
+            <i class="fa-solid fa-file-excel"></i>
+            <span>Xuất Excel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="flex-1 overflow-auto custom-scroll p-6 bg-slate-50/50">
+        <table class="w-full border-collapse text-left text-xs bg-white rounded-xl overflow-hidden shadow-xs border border-slate-200">
+          <thead class="bg-slate-100 text-slate-700 font-bold border-b border-slate-200 sticky top-0 z-10">
+            <tr>
+              <th class="py-3 px-3 text-center w-12">STT</th>
+              <th class="py-3 px-3 w-32">Mã Bệnh Án</th>
+              <th class="py-3 px-3">Họ và Tên</th>
+              <th class="py-3 px-3 text-center w-24">Ngày sinh</th>
+              <th class="py-3 px-3 text-center w-14">Giới</th>
+              <th class="py-3 px-3 w-40">Đối Tượng / Thẻ BHYT</th>
+              <th class="py-3 px-3 w-36">Ngày Tiếp Nhận</th>
+              <th class="py-3 px-3 w-36">Ngày Ra Viện</th>
+              <th class="py-3 px-3">Phòng Khám Tiếp Nhận</th>
+              <th class="py-3 px-3">Người Tiếp Nhận</th>
+              <th class="py-3 px-3">Xử Trí Khám</th>
+              <th class="py-3 px-3 text-center w-36">Trạng Thái Khám</th>
+            </tr>
+          </thead>
+          <tbody id="modalTiepNhanTableBody" class="divide-y divide-slate-100 font-medium"></tbody>
+        </table>
+
+        <!-- Empty state placeholder -->
+        <div id="tableTiepNhanEmptyState" class="hidden py-12 text-center">
+          <div class="w-12 h-12 mx-auto rounded-full bg-slate-100 text-slate-400 flex items-center justify-center text-xl mb-2">
+            <i class="fa-solid fa-user-check"></i>
+          </div>
+          <p class="text-sm font-semibold text-slate-600">Không tìm thấy hồ sơ tiếp nhận nào phù hợp</p>
+          <p class="text-xs text-slate-400 mt-0.5">Thử đổi tab bộ lọc, nới rộng thời gian quét hoặc xóa từ khóa tìm kiếm</p>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="px-6 py-3 border-t border-slate-200 bg-white flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+        <div class="flex flex-wrap items-center gap-4 text-slate-600">
+          <span>Đang hiển thị: <b id="modalTiepNhanShowingCount" class="text-slate-900">0</b> bệnh nhân</span>
+          <span>•</span>
+          <span>Chưa kết thúc khám: <b id="modalTiepNhanUnfinishedSummary" class="text-rose-600 font-bold">0</b> ca</span>
+          <span>•</span>
+          <span>Đã kết thúc: <b id="modalTiepNhanFinishedSummary" class="text-emerald-600 font-bold">0</b> ca</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button type="button" onclick="closeTiepNhanModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg transition">
+            Đóng
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- MODAL QUẢN LÝ TOKEN & ĐƠN VỊ -->
   <div id="tokenConfigModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs hidden">
     <div class="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-lg p-6 space-y-4">
@@ -885,7 +1176,167 @@
     let currentModalFilter = 'unapproved'; // BHYT filter: 'unapproved' | 'noMed' | 'approved' | 'all'
     let currentPharmFilter = 'unapproved'; // Pharmacy filter: 'unapproved' | 'diffMonth' | 'approved' | 'all'
     let currentNoMedFilter = 'all'; // No-med filter: 'all' | 'unapproved' | 'approved' | 'chuyenVien'
+    let currentTiepNhanFilter = 'unfinished'; // Tiep Nhan filter: 'unfinished' | 'waiting' | 'examining' | 'finished' | 'all'
+    let tiepNhanFetchError = null;
+    let trangThaiKhamBenhDict = {
+      '1': 'Chờ khám',
+      '2': 'Chờ CLS',
+      '3': 'Chờ kết luận',
+      '4': 'Đang khám',
+      '9': 'Đã kết thúc khám'
+    };
+    let trangThaiDictLoadedForToken = '';
     let autoRefreshTimer = null;
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function isTiepNhanFinished(t) {
+      return Number(t?.trangThaiKhamBenh) === 9;
+    }
+
+    function isTiepNhanWaiting(t) {
+      if (isTiepNhanFinished(t)) return false;
+      const st = Number(t?.trangThaiKhamBenh);
+      return st === 1 || st === 0 || t?.trangThaiKhamBenh === null || t?.trangThaiKhamBenh === undefined || isNaN(st);
+    }
+
+    function isTiepNhanExamining(t) {
+      return !isTiepNhanFinished(t) && !isTiepNhanWaiting(t);
+    }
+
+    function isTiepNhanBhyt(t) {
+      return Number(t?.doiTuongBenhNhanId) === 1 || String(t?.doiTuongBenhNhan || '').toUpperCase().includes('BHYT');
+    }
+
+    function formatGioiTinhTiepNhan(val) {
+      if (val === 1 || val === '1' || String(val).toLowerCase() === 'nam') return 'Nam';
+      if (val === 2 || val === '2' || String(val).toLowerCase() === 'nữ' || String(val).toLowerCase() === 'nu') return 'Nữ';
+      return val || '---';
+    }
+
+    function formatNgaySinhTiepNhan(t) {
+      if (t?.ngaySinh) {
+        const s = String(t.ngaySinh).trim().split(' ')[0];
+        if (s) return s;
+      }
+      return t?.namSinh ? String(t.namSinh) : '---';
+    }
+
+    function getTiepNhanStatusInfo(t) {
+      const code = t?.trangThaiKhamBenh;
+      const codeKey = (code === null || code === undefined) ? '' : String(code);
+      const label = trangThaiKhamBenhDict[codeKey] || (isTiepNhanFinished(t) ? 'Đã kết thúc khám' : `Chưa kết thúc (${codeKey || '?'})`);
+
+      if (isTiepNhanFinished(t)) {
+        return {
+          code: codeKey,
+          label,
+          badgeClass: 'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-100 text-emerald-800',
+          iconClass: 'fa-solid fa-check mr-1'
+        };
+      }
+      if (isTiepNhanWaiting(t)) {
+        return {
+          code: codeKey,
+          label,
+          badgeClass: 'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200 animate-pulse',
+          iconClass: 'fa-solid fa-hourglass-half mr-1'
+        };
+      }
+      return {
+        code: codeKey,
+        label,
+        badgeClass: 'inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-200 animate-pulse',
+        iconClass: 'fa-solid fa-stethoscope mr-1'
+      };
+    }
+
+    async function loadTrangThaiKhamBenhDict(token) {
+      if (!token || trangThaiDictLoadedForToken === token) return;
+      try {
+        const res = await fetch('/api/common/dmchethong/findByMaNhom?maNhom=TRANGTHAIKHAMBENH', {
+          method: 'GET',
+          headers: {
+            'Authorization': token,
+            'Accept': 'application/json, text/plain, */*',
+            'X-Screen-Path': '/ngoaitru/tnkb/ds-tiepnhan'
+          }
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        const items = Array.isArray(json?.data) ? json.data : (Array.isArray(json?.data?.content) ? json.data.content : []);
+        if (items.length > 0) {
+          const nextMap = { ...trangThaiKhamBenhDict };
+          items.forEach(item => {
+            const key = String(item.giaTri ?? item.ma ?? item.id ?? '').trim();
+            const text = item.ten || item.dienGiai || item.moTa;
+            if (key && text) nextMap[key] = text;
+          });
+          trangThaiKhamBenhDict = nextMap;
+          trangThaiDictLoadedForToken = token;
+        }
+      } catch (e) {
+        console.warn('Không nạp được từ điển TRANGTHAIKHAMBENH:', e);
+      }
+    }
+
+    async function fetchAllTiepNhanPages(tuNgay, denNgay, token) {
+      const tiepNhanFilter = `tuNgay==%22${encodeURIComponent(tuNgay)}%22;denNgay==%22${encodeURIComponent(denNgay)}%22;theoNgayRaVien==0;kenhDangKy==0;trangThaiId==0;phongKhamId==0;dtbnId==0`;
+      const buildUrl = (page) => `/api/common/tiepnhan/danhsachtiepnhan?filter=${tiepNhanFilter}&page=${page}&size=1000&sort=ngayTiepNhan&sort=desc`;
+      const headers = {
+        'Authorization': token,
+        'Accept': 'application/json, text/plain, */*',
+        'X-Screen-Path': '/ngoaitru/tnkb/ds-tiepnhan'
+      };
+
+      try {
+        const firstRes = await fetch(buildUrl(0), { method: 'GET', headers });
+        if (!firstRes.ok) {
+          return { ok: false, status: firstRes.status, content: [] };
+        }
+        const firstJson = await firstRes.json();
+        const firstContent = firstJson?.data?.content || [];
+        const totalPages = Math.min(Number(firstJson?.data?.totalPages || 1), 10);
+
+        if (totalPages <= 1) {
+          return { ok: true, content: firstContent };
+        }
+
+        const extraPages = [];
+        for (let p = 1; p < totalPages; p++) {
+          extraPages.push(
+            fetch(buildUrl(p), { method: 'GET', headers })
+              .then(r => (r.ok ? r.json() : null))
+              .catch(() => null)
+          );
+        }
+        const extraResults = await Promise.all(extraPages);
+        const merged = [...firstContent];
+        const seen = new Set(merged.map(it => it.tiepNhanId || it.phongKhamDangKyId || it.maHoSoBenhAn).filter(Boolean));
+        for (const pageJson of extraResults) {
+          const rows = pageJson?.data?.content || [];
+          for (const row of rows) {
+            const uid = row.tiepNhanId || row.phongKhamDangKyId || row.maHoSoBenhAn;
+            if (!uid || !seen.has(uid)) {
+              if (uid) seen.add(uid);
+              merged.push(row);
+            }
+          }
+        }
+        return { ok: true, content: merged };
+      } catch (err) {
+        console.warn('Lỗi gọi API Tiếp nhận:', err);
+        return { ok: false, error: err.message, content: [] };
+      }
+    }
 
     // Toast Notification helper
     function showToast(message, type = 'info') {
@@ -1360,13 +1811,10 @@
           return `/api/pharmacy/duyetphatthuocngoaitru/tracuuphieungoaitru?filter=${pFilter}&page=0&size=1000&sort=id,asc`;
         });
 
-        // 3. API Tiếp nhận bệnh nhân (theo thời gian tiếp nhận/kham)
-        const tiepNhanFilter = `tuNgay==%22${encodeURIComponent(tuNgay)}%22;denNgay==%22${encodeURIComponent(denNgay)}%22;theoNgayRaVien==0;kenhDangKy==0;trangThaiId==0;phongKhamId==0;dtbnId==0`;
-        const tiepNhanUrl = `/api/common/tiepnhan/danhsachtiepnhan?filter=${tiepNhanFilter}&page=0&size=1000&sort=ngayTiepNhan&sort=desc`;
-
+        // 3. API Tiếp nhận bệnh nhân (theo thời gian tiếp nhận) + Tự động nạp đủ trang nếu > 1000
         const deepScan = document.getElementById('chkDeepScanPharmacy')?.checked ?? true;
 
-        const [resBilling, resPharmacy, resTiepNhan] = await Promise.all([
+        const [resBilling, resPharmacy, tiepNhanResult] = await Promise.all([
           fetch(billingUrl, {
             method: 'GET',
             headers: {
@@ -1376,17 +1824,8 @@
             }
           }),
           fetchPharmacyWithDynamicRevert(pharmacyUrls, currentToken, deepScan),
-          fetch(tiepNhanUrl, {
-            method: 'GET',
-            headers: {
-              'Authorization': currentToken,
-              'Accept': 'application/json, text/plain, */*',
-              'X-Screen-Path': '/ngoaitru/tnkb/ds-tiepnhan'
-            }
-          }).catch(err => {
-            console.warn('Lỗi gọi API Tiếp nhận:', err);
-            return { ok: false };
-          })
+          fetchAllTiepNhanPages(tuNgay, denNgay, currentToken),
+          loadTrangThaiKhamBenhDict(currentToken)
         ]);
 
         if (!resBilling.ok) throw new Error(`Lỗi API Viện Phí (${resBilling.status})`);
@@ -1394,14 +1833,20 @@
 
         const dataBilling = await resBilling.json();
         const dataPharmacy = await resPharmacy.json();
-        let dataTiepNhan = null;
-        if (resTiepNhan && resTiepNhan.ok) {
-          try { dataTiepNhan = await resTiepNhan.json(); } catch(e) {}
-        }
 
         allPatients = dataBilling?.data?.content || [];
         allPharmacySlips = dataPharmacy?.data?.content || [];
-        allTiepNhan = dataTiepNhan?.data?.content || [];
+
+        if (tiepNhanResult && tiepNhanResult.ok) {
+          allTiepNhan = tiepNhanResult.content || [];
+          tiepNhanFetchError = null;
+        } else {
+          allTiepNhan = [];
+          tiepNhanFetchError = tiepNhanResult?.status
+            ? `HTTP ${tiepNhanResult.status}`
+            : (tiepNhanResult?.error || 'Không thể tải danh sách tiếp nhận');
+          showToast(`Cảnh báo: Không tải được API Tiếp nhận (${tiepNhanFetchError})`, 'warning');
+        }
 
         // Đối soát liên hệ thống: Bệnh nhân có khám, có sang duyệt BH nhưng KHÔNG cấp thuốc
         const pharmBaSet = new Set(allPharmacySlips.map(p => p.maBa).filter(Boolean));
@@ -1433,9 +1878,12 @@
           }
         });
 
-        // Process statistics for both
+        // Process statistics for all 3 modules
         processAlertStats();
         processPharmacyStats();
+        processTiepNhanStats();
+
+        const unfinishedTiepNhanCount = allTiepNhan.filter(t => !isTiepNhanFinished(t)).length;
 
         const deepBadge = document.getElementById('deepScanStatusBadge');
         if (deepBadge) {
@@ -1449,8 +1897,8 @@
         }
 
         const nowStr = new Date().toLocaleTimeString('vi-VN');
-        document.getElementById('lastScanTime').innerText = `Lần quét gần nhất: ${nowStr} (Tiếp nhận: ${allTiepNhan.length} | Viện phí: ${allPatients.length} | Không cấp thuốc: ${allNoMedPatients.length} | Dược: ${allPharmacySlips.length} phiếu)`;
-        showToast(`Quét thành công! ${allPatients.length} hồ sơ BHYT (${allNoMedPatients.length} ca không thuốc) & ${allPharmacySlips.length} phiếu thuốc.`, 'success');
+        document.getElementById('lastScanTime').innerText = `Lần quét gần nhất: ${nowStr} (Tiếp nhận: ${allTiepNhan.length} • Chưa KT: ${unfinishedTiepNhanCount} | Viện phí: ${allPatients.length} | Không cấp thuốc: ${allNoMedPatients.length} | Dược: ${allPharmacySlips.length} phiếu)`;
+        showToast(`Quét thành công! Tiếp nhận: ${allTiepNhan.length} (${unfinishedTiepNhanCount} chưa kết thúc), Viện phí: ${allPatients.length}, Dược: ${allPharmacySlips.length}.`, 'success');
 
       } catch (err) {
         console.error('Lỗi quét cảnh báo:', err);
@@ -1529,6 +1977,12 @@
       document.getElementById('statTotalCost').innerText = formatVND(sumTotalCost);
       document.getElementById('statTotalBhtt').innerText = formatVND(sumTotalBhtt);
 
+      // Update Quick Summary Pill for Unapproved BHYT
+      const quickUnapprovedBh = document.getElementById('quickUnapprovedBh');
+      const btnQuickUnapprovedBh = document.getElementById('btnQuickUnapprovedBh');
+      if (quickUnapprovedBh) quickUnapprovedBh.innerText = unapprovedCount;
+      updateQuickPillStyle(btnQuickUnapprovedBh, unapprovedCount > 0, 'rose');
+
       // If BHYT modal is open, re-render its table
       const modal = document.getElementById('patientDetailModal');
       if (!modal.classList.contains('hidden')) {
@@ -1539,6 +1993,17 @@
       const noMedModal = document.getElementById('noMedDetailModal');
       if (!noMedModal.classList.contains('hidden')) {
         renderNoMedFilteredTable();
+      }
+    }
+
+    function updateQuickPillStyle(btnEl, isAlert, tone = 'rose') {
+      if (!btnEl) return;
+      if (isAlert) {
+        btnEl.className = tone === 'amber'
+          ? 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-semibold transition cursor-pointer'
+          : 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-300 font-semibold transition cursor-pointer animate-pulse';
+      } else {
+        btnEl.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold transition cursor-pointer';
       }
     }
 
@@ -1623,10 +2088,89 @@
       document.getElementById('statPharmApprovedSum').innerText = formatVND(sumApprovedMoney);
       document.getElementById('statPharmApprovedPercent').innerText = `${percent}% (${approvedCount}/${totalCount})`;
 
+      // Update Quick Summary Pills for Pharmacy
+      const quickPharmUnapproved = document.getElementById('quickPharmUnapproved');
+      if (quickPharmUnapproved) quickPharmUnapproved.innerText = unapprovedCount;
+      updateQuickPillStyle(document.getElementById('btnQuickPharmUnapproved'), unapprovedCount > 0, 'rose');
+
+      const quickPharmDiffMonth = document.getElementById('quickPharmDiffMonth');
+      if (quickPharmDiffMonth) quickPharmDiffMonth.innerText = diffMonthCount;
+      updateQuickPillStyle(document.getElementById('btnQuickPharmDiffMonth'), diffMonthCount > 0, 'amber');
+
       // If pharmacy modal is open, re-render its table
       const pharmModal = document.getElementById('pharmacyDetailModal');
       if (!pharmModal.classList.contains('hidden')) {
         renderPharmFilteredTable();
+      }
+    }
+
+    // Process & calculate Tiếp nhận & Chưa kết thúc khám statistics
+    function processTiepNhanStats() {
+      const unfinishedList = allTiepNhan.filter(t => !isTiepNhanFinished(t));
+      const waitingList = unfinishedList.filter(t => isTiepNhanWaiting(t));
+      const examiningList = unfinishedList.filter(t => isTiepNhanExamining(t));
+      const finishedList = allTiepNhan.filter(t => isTiepNhanFinished(t));
+      const bhytList = allTiepNhan.filter(t => isTiepNhanBhyt(t));
+
+      const totalCount = allTiepNhan.length;
+      const unfinishedCount = unfinishedList.length;
+      const waitingCount = waitingList.length;
+      const examiningCount = examiningList.length;
+      const finishedCount = finishedList.length;
+      const bhytCount = bhytList.length;
+      const otherCount = Math.max(0, totalCount - bhytCount);
+      const bhytUnfinishedCount = unfinishedList.filter(t => isTiepNhanBhyt(t)).length;
+      const finishPercent = totalCount > 0 ? Math.round((finishedCount / totalCount) * 100) : 100;
+
+      // Update Card 3.1: Tiếp nhận chưa kết thúc khám
+      document.getElementById('statTiepNhanUnfinishedCount').innerText = unfinishedCount;
+      document.getElementById('statTiepNhanWaitingCount').innerText = `${waitingCount} ca`;
+      document.getElementById('statTiepNhanExaminingCount').innerText = `${examiningCount} ca`;
+
+      const badgeUnfinished = document.getElementById('badgeTiepNhanUnfinishedStatus');
+      const cardUnfinished = document.getElementById('cardTiepNhanUnfinished');
+      if (tiepNhanFetchError) {
+        badgeUnfinished.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300';
+        badgeUnfinished.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Lỗi tải (${escapeHtml(tiepNhanFetchError)})</span>`;
+        cardUnfinished.classList.remove('pulse-danger');
+      } else if (unfinishedCount > 0) {
+        badgeUnfinished.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-rose-100 text-rose-800 border border-rose-200';
+        badgeUnfinished.innerHTML = '<span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span><span>Cần xử lý ngay</span>';
+        cardUnfinished.classList.add('pulse-danger');
+      } else {
+        badgeUnfinished.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200';
+        badgeUnfinished.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Đã kết thúc hết</span>';
+        cardUnfinished.classList.remove('pulse-danger');
+      }
+
+      // Update Card 3.2: Tổng số bệnh nhân tiếp nhận
+      document.getElementById('statTiepNhanTotalCount').innerText = totalCount;
+      document.getElementById('statTiepNhanBhytCount').innerText = `${bhytCount} ca`;
+      document.getElementById('statTiepNhanOtherCount').innerText = `${otherCount} ca`;
+
+      const badgeTotal = document.getElementById('badgeTiepNhanTotalStatus');
+      if (badgeTotal) {
+        badgeTotal.innerHTML = tiepNhanFetchError
+          ? `<span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Lỗi tải dữ liệu</span>`
+          : `<span class="w-2 h-2 rounded-full bg-sky-500"></span><span>${totalCount} lượt đón tiếp</span>`;
+      }
+
+      // Update Card 3.3: Đã kết thúc khám
+      document.getElementById('statTiepNhanFinishedCount').innerText = finishedCount;
+      document.getElementById('statTiepNhanFinishPercent').innerText = `${finishPercent}% (${finishedCount}/${totalCount})`;
+      document.getElementById('statTiepNhanBhytUnfinishedCount').innerText = `${bhytUnfinishedCount} ca`;
+
+      // Update Quick Summary Bar pills
+      const quickTotal = document.getElementById('quickTiepNhanTotal');
+      if (quickTotal) quickTotal.innerText = totalCount;
+      const quickUnfinished = document.getElementById('quickTiepNhanUnfinished');
+      if (quickUnfinished) quickUnfinished.innerText = unfinishedCount;
+      updateQuickPillStyle(document.getElementById('btnQuickTiepNhanUnfinished'), unfinishedCount > 0, 'rose');
+
+      // Re-render Modal 4 if open
+      const tiepNhanModal = document.getElementById('tiepNhanDetailModal');
+      if (tiepNhanModal && !tiepNhanModal.classList.contains('hidden')) {
+        renderTiepNhanFilteredTable();
       }
     }
 
@@ -2274,6 +2818,250 @@
       showToast('Đã tải xuống file Excel KCB Không Cấp Thuốc thành công!', 'success');
     }
 
+    // ==========================================
+    // MODAL 4: TIẾP NHẬN & CHƯA KẾT THÚC KHÁM LOGIC
+    // ==========================================
+    function openTiepNhanModal(filterType = 'unfinished') {
+      currentTiepNhanFilter = filterType;
+      const modal = document.getElementById('tiepNhanDetailModal');
+      modal.classList.remove('hidden');
+
+      const tuNgay = document.getElementById('inputTuNgay').value;
+      const denNgay = document.getElementById('inputDenNgay').value;
+      const unfinishedCount = allTiepNhan.filter(t => !isTiepNhanFinished(t)).length;
+      document.getElementById('modalTiepNhanSubtitle').innerText = `Khoảng ngày tiếp nhận: từ ${tuNgay} đến ${denNgay} • Tổng: ${allTiepNhan.length} BN (${unfinishedCount} chưa kết thúc khám)`;
+
+      updateTiepNhanModalTabsUI();
+      renderTiepNhanFilteredTable();
+    }
+
+    function closeTiepNhanModal() {
+      document.getElementById('tiepNhanDetailModal').classList.add('hidden');
+    }
+
+    function switchTiepNhanFilter(type) {
+      currentTiepNhanFilter = type;
+      updateTiepNhanModalTabsUI();
+      renderTiepNhanFilteredTable();
+    }
+
+    function updateTiepNhanModalTabsUI() {
+      const tabConfigs = {
+        unfinished: {
+          btnId: 'tabTiepNhanUnfinished',
+          activeClass: 'bg-white text-rose-600 font-bold shadow-xs',
+          title: 'Danh Sách Bệnh Nhân Tiếp Nhận Chưa Kết Thúc Khám',
+          iconClass: 'w-9 h-9 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-base font-bold shadow-xs',
+          iconHtml: '<i class="fa-solid fa-user-clock"></i>'
+        },
+        waiting: {
+          btnId: 'tabTiepNhanWaiting',
+          activeClass: 'bg-white text-amber-700 font-bold shadow-xs',
+          title: 'Danh Sách Bệnh Nhân Đang Chờ Khám',
+          iconClass: 'w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center text-base font-bold shadow-xs',
+          iconHtml: '<i class="fa-solid fa-hourglass-half"></i>'
+        },
+        examining: {
+          btnId: 'tabTiepNhanExamining',
+          activeClass: 'bg-white text-rose-700 font-bold shadow-xs',
+          title: 'Danh Sách Bệnh Nhân Đang Khám (Chưa Kết Thúc)',
+          iconClass: 'w-9 h-9 rounded-xl bg-rose-100 text-rose-700 flex items-center justify-center text-base font-bold shadow-xs',
+          iconHtml: '<i class="fa-solid fa-stethoscope"></i>'
+        },
+        finished: {
+          btnId: 'tabTiepNhanFinished',
+          activeClass: 'bg-white text-emerald-600 font-bold shadow-xs',
+          title: 'Danh Sách Bệnh Nhân Đã Kết Thúc Khám Bệnh',
+          iconClass: 'w-9 h-9 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-base font-bold shadow-xs',
+          iconHtml: '<i class="fa-solid fa-user-check"></i>'
+        },
+        all: {
+          btnId: 'tabTiepNhanAll',
+          activeClass: 'bg-white text-sky-600 font-bold shadow-xs',
+          title: 'Toàn Bộ Danh Sách Bệnh Nhân Tiếp Nhận',
+          iconClass: 'w-9 h-9 rounded-xl bg-sky-100 text-sky-600 flex items-center justify-center text-base font-bold shadow-xs',
+          iconHtml: '<i class="fa-solid fa-clipboard-user"></i>'
+        }
+      };
+
+      const defaultClass = 'px-3 py-1.5 rounded-lg text-slate-600 hover:text-slate-900 transition';
+      Object.entries(tabConfigs).forEach(([key, cfg]) => {
+        const btn = document.getElementById(cfg.btnId);
+        if (btn) {
+          btn.className = `px-3 py-1.5 rounded-lg transition ${currentTiepNhanFilter === key ? cfg.activeClass : defaultClass}`;
+        }
+      });
+
+      const activeCfg = tabConfigs[currentTiepNhanFilter] || tabConfigs.all;
+      document.getElementById('modalTiepNhanTitle').innerText = activeCfg.title;
+      const modalIcon = document.getElementById('modalTiepNhanHeaderIcon');
+      modalIcon.className = activeCfg.iconClass;
+      modalIcon.innerHTML = activeCfg.iconHtml;
+    }
+
+    function getCurrentlyFilteredTiepNhan() {
+      let list = allTiepNhan;
+      if (currentTiepNhanFilter === 'unfinished') {
+        list = allTiepNhan.filter(t => !isTiepNhanFinished(t));
+      } else if (currentTiepNhanFilter === 'waiting') {
+        list = allTiepNhan.filter(t => isTiepNhanWaiting(t));
+      } else if (currentTiepNhanFilter === 'examining') {
+        list = allTiepNhan.filter(t => isTiepNhanExamining(t));
+      } else if (currentTiepNhanFilter === 'finished') {
+        list = allTiepNhan.filter(t => isTiepNhanFinished(t));
+      }
+
+      const q = (document.getElementById('modalTiepNhanSearchInput')?.value || '').trim().toLowerCase();
+      if (!q) return list;
+
+      return list.filter(t => {
+        return (t.maHoSoBenhAn && t.maHoSoBenhAn.toLowerCase().includes(q)) ||
+               (t.tenBenhNhan && t.tenBenhNhan.toLowerCase().includes(q)) ||
+               (t.maBenhNhan && t.maBenhNhan.toLowerCase().includes(q)) ||
+               (t.maBhyt && t.maBhyt.toLowerCase().includes(q)) ||
+               (t.sdtBenhNhan && t.sdtBenhNhan.toLowerCase().includes(q)) ||
+               (t.doiTuongBenhNhan && t.doiTuongBenhNhan.toLowerCase().includes(q)) ||
+               (t.phongKhamBenh && t.phongKhamBenh.toLowerCase().includes(q)) ||
+               (t.nguoiTiepNhan && t.nguoiTiepNhan.toLowerCase().includes(q)) ||
+               (t.xuTriKhamBenh && t.xuTriKhamBenh.toLowerCase().includes(q));
+      });
+    }
+
+    function renderTiepNhanFilteredTable() {
+      const list = getCurrentlyFilteredTiepNhan();
+      const tbody = document.getElementById('modalTiepNhanTableBody');
+      const emptyState = document.getElementById('tableTiepNhanEmptyState');
+      const badgeCount = document.getElementById('modalTiepNhanBadgeCount');
+
+      badgeCount.innerText = `${list.length} bệnh nhân`;
+      if (currentTiepNhanFilter === 'unfinished' || currentTiepNhanFilter === 'examining') {
+        badgeCount.className = 'px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-rose-500 text-white';
+      } else if (currentTiepNhanFilter === 'waiting') {
+        badgeCount.className = 'px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-amber-500 text-white';
+      } else if (currentTiepNhanFilter === 'finished') {
+        badgeCount.className = 'px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-emerald-600 text-white';
+      } else {
+        badgeCount.className = 'px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-sky-600 text-white';
+      }
+
+      document.getElementById('modalTiepNhanShowingCount').innerText = list.length;
+      document.getElementById('modalTiepNhanUnfinishedSummary').innerText = list.filter(t => !isTiepNhanFinished(t)).length;
+      document.getElementById('modalTiepNhanFinishedSummary').innerText = list.filter(t => isTiepNhanFinished(t)).length;
+
+      if (list.length === 0) {
+        tbody.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      tbody.innerHTML = list.map((it, idx) => {
+        const stInfo = getTiepNhanStatusInfo(it);
+        const isUnfinished = !isTiepNhanFinished(it);
+        const maBaSafe = escapeHtml(it.maHoSoBenhAn || '');
+        const doiTuongLabel = escapeHtml(it.doiTuongBenhNhan || '---');
+        const isBhyt = isTiepNhanBhyt(it);
+        const doiTuongBadgeClass = isBhyt
+          ? 'bg-sky-100 text-sky-800 border-sky-200'
+          : 'bg-slate-100 text-slate-700 border-slate-200';
+
+        return `
+          <tr class="hover:bg-sky-50/40 transition ${isUnfinished ? 'bg-rose-50/20' : ''}">
+            <td class="py-2.5 px-3 text-center text-slate-400 font-mono">${idx + 1}</td>
+            <td class="py-2.5 px-3 font-mono font-bold text-slate-900">
+              <div class="flex items-center gap-1.5">
+                <span>${maBaSafe || '---'}</span>
+                ${maBaSafe ? `<button type="button" onclick="copyText('${maBaSafe}')" class="text-slate-400 hover:text-sky-600" title="Sao chép Mã BA"><i class="fa-regular fa-copy text-xs"></i></button>` : ''}
+              </div>
+            </td>
+            <td class="py-2.5 px-3">
+              <div class="font-bold text-slate-800 uppercase">${escapeHtml(it.tenBenhNhan || '---')}</div>
+              <div class="text-[11px] text-slate-400 font-mono">${escapeHtml(it.maBenhNhan || '')}${it.sdtBenhNhan ? ' • ' + escapeHtml(it.sdtBenhNhan) : ''}</div>
+            </td>
+            <td class="py-2.5 px-3 text-center text-slate-600 font-mono">${escapeHtml(formatNgaySinhTiepNhan(it))}</td>
+            <td class="py-2.5 px-3 text-center text-slate-600">${escapeHtml(formatGioiTinhTiepNhan(it.gioiTinh))}</td>
+            <td class="py-2.5 px-3">
+              <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border ${doiTuongBadgeClass}">${doiTuongLabel}</span>
+              <div class="text-[11px] text-slate-600 font-mono mt-0.5">${escapeHtml(it.maBhyt || '---')}</div>
+            </td>
+            <td class="py-2.5 px-3 text-slate-700 font-mono text-[11px]">
+              <div>${escapeHtml(it.ngayTiepNhan || '---')}</div>
+              ${it.ngayBdKham ? `<div class="text-[10px] text-slate-400">BĐ: ${escapeHtml(it.ngayBdKham)}</div>` : ''}
+            </td>
+            <td class="py-2.5 px-3 font-mono text-[11px]">${it.ngayRaVien ? `<span class="text-slate-600">${escapeHtml(it.ngayRaVien)}</span>` : '<span class="text-rose-500 font-semibold italic">Chưa kết thúc</span>'}</td>
+            <td class="py-2.5 px-3 text-slate-700 text-[11px] font-medium">${escapeHtml(it.phongKhamBenh || '---')}</td>
+            <td class="py-2.5 px-3 text-slate-600 text-[11px]">${escapeHtml(it.nguoiTiepNhan || '---')}</td>
+            <td class="py-2.5 px-3 text-[11px]">${it.xuTriKhamBenh ? `<span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-100 text-slate-800 font-semibold">${escapeHtml(it.xuTriKhamBenh)}</span>` : '<span class="text-slate-400 italic">Chưa có xử trí</span>'}</td>
+            <td class="py-2.5 px-3 text-center">
+              <span class="${stInfo.badgeClass}" title="Mã trạng thái: ${escapeHtml(stInfo.code)}">
+                <i class="${stInfo.iconClass}"></i>${escapeHtml(stInfo.label)}
+              </span>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function copyAllTiepNhanMaBA() {
+      const list = getCurrentlyFilteredTiepNhan();
+      if (list.length === 0) {
+        showToast('Không có dữ liệu để sao chép', 'warning');
+        return;
+      }
+      const codes = list.map(it => it.maHoSoBenhAn).filter(Boolean);
+      const joined = codes.join(', ');
+      copyText(joined);
+      showToast(`Đã sao chép ${codes.length} mã bệnh án vào Clipboard!`, 'success');
+    }
+
+    function exportTiepNhanToExcel() {
+      const list = getCurrentlyFilteredTiepNhan();
+      if (list.length === 0) {
+        showToast('Không có dữ liệu để xuất', 'warning');
+        return;
+      }
+
+      const headers = ['STT', 'Mã Bệnh Án', 'Mã Bệnh Nhân', 'Họ Và Tên', 'Ngày Sinh', 'Giới Tính', 'Đối Tượng', 'Mã Thẻ BHYT', 'Số Điện Thoại', 'Ngày Tiếp Nhận', 'Ngày Bắt Đầu Khám', 'Ngày Ra Viện', 'Phòng Khám Tiếp Nhận', 'Người Tiếp Nhận', 'Xử Trí Khám', 'Mã Trạng Thái', 'Trạng Thái Khám'];
+      const rows = list.map((it, idx) => {
+        const stInfo = getTiepNhanStatusInfo(it);
+        return [
+          idx + 1,
+          it.maHoSoBenhAn || '',
+          it.maBenhNhan || '',
+          it.tenBenhNhan || '',
+          formatNgaySinhTiepNhan(it),
+          formatGioiTinhTiepNhan(it.gioiTinh),
+          it.doiTuongBenhNhan || '',
+          it.maBhyt || '',
+          it.sdtBenhNhan || '',
+          it.ngayTiepNhan || '',
+          it.ngayBdKham || '',
+          it.ngayRaVien || '',
+          it.phongKhamBenh || '',
+          it.nguoiTiepNhan || '',
+          it.xuTriKhamBenh || '',
+          stInfo.code,
+          stInfo.label
+        ];
+      });
+
+      const csvContent = '\uFEFF' + [headers, ...rows].map(row => {
+        return row.map(val => `"${String(val).replace(/"/g, '""')}"`).join(',');
+      }).join('\r\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const timeStr = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `Danh_Sach_Tiep_Nhan_${currentTiepNhanFilter}_${timeStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      showToast('Đã tải xuống file Excel Danh Sách Tiếp Nhận thành công!', 'success');
+    }
+
     // Shortcut to KSK Tab
     function goToKskTab() {
       if (window.parent && window.parent !== window) {
@@ -2300,6 +3088,7 @@
         closeDetailModal();
         closePharmacyModal();
         closeNoMedModal();
+        closeTiepNhanModal();
         const m = document.getElementById('tokenConfigModal');
         if (!m.classList.contains('hidden')) m.classList.add('hidden');
       }
@@ -2318,6 +3107,9 @@
     });
     document.getElementById('noMedDetailModal').addEventListener('click', (e) => {
       if (e.target.id === 'noMedDetailModal') closeNoMedModal();
+    });
+    document.getElementById('tiepNhanDetailModal').addEventListener('click', (e) => {
+      if (e.target.id === 'tiepNhanDetailModal') closeTiepNhanModal();
     });
 
     // Lắng nghe Token cập nhật tự động từ Header quản trị
