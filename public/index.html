@@ -194,6 +194,11 @@
       font-weight: 600;
     }
 
+    .account-dropdown-trigger.unselected .acc-trigger-label {
+      color: #64748b;
+      font-weight: 500;
+    }
+
     .acc-trigger-arrow {
       font-size: 10px;
       color: #6b7280;
@@ -1911,16 +1916,48 @@
       saveAccountsLocally();
     }
 
-    function updateDropdownLabel(acc) {
+    function findSavedAccountByUsername(username) {
+      const normalized = String(username || '').trim().toLowerCase();
+      if (!normalized) return null;
+      return accountsList.find(
+        (a) => String(a.username || '').trim().toLowerCase() === normalized
+      ) || null;
+    }
+
+    function updateDropdownLabel(acc, activeExternalUsername = '') {
       if (!accountDropdownLabel) return;
       if (!acc) {
         accountDropdownLabel.textContent = '-- Danh sách tài khoản --';
-        accountDropdownTrigger.title = 'Chọn nhanh tài khoản đã lưu';
+        if (accountDropdownTrigger) {
+          accountDropdownTrigger.classList.add('unselected');
+          accountDropdownTrigger.title = activeExternalUsername
+            ? `Đang dùng tài khoản ngoài danh sách (${activeExternalUsername}). Bấm để chọn tài khoản đã lưu`
+            : 'Chọn nhanh tài khoản đã lưu';
+        }
         return;
       }
       const title = acc.name || acc.username;
       accountDropdownLabel.textContent = `${title} (${acc.username})`;
-      accountDropdownTrigger.title = `Tài khoản đang chọn: ${title} (${acc.username})`;
+      if (accountDropdownTrigger) {
+        accountDropdownTrigger.classList.remove('unselected');
+        accountDropdownTrigger.title = `Tài khoản đang chọn: ${title} (${acc.username})`;
+      }
+    }
+
+    function syncAccountSelectorByUsername(username) {
+      const matched = findSavedAccountByUsername(username);
+      if (matched) {
+        currentSelectedAccountId = matched.id;
+        savedAccountsSelect.value = matched.id;
+        if (newTabAccountSelect) newTabAccountSelect.value = matched.id;
+        updateDropdownLabel(matched);
+      } else {
+        currentSelectedAccountId = null;
+        savedAccountsSelect.value = '';
+        if (newTabAccountSelect) newTabAccountSelect.value = '';
+        updateDropdownLabel(null, String(username || '').trim());
+      }
+      renderSearchableDropdownList();
     }
 
     // Render danh sách tài khoản trong Combobox Header (Có ô tìm kiếm)
@@ -2151,23 +2188,22 @@
         newTabAccountSelect.appendChild(opt2);
       });
 
-      // 2. Cập nhật nhãn tài khoản đang chọn
-      let selectedAcc = accountsList.find(a => a.id === currentSelectedAccountId);
-      if (!selectedAcc && accountsList.length > 0) {
-        selectedAcc = accountsList[0];
-        currentSelectedAccountId = selectedAcc.id;
+      // 2. Cập nhật nhãn tài khoản đang chọn (không tự động ép chọn đơn vị mặc định khi dùng tài khoản ngoài danh sách)
+      const selectedAcc = accountsList.find(a => a.id === currentSelectedAccountId) || null;
+      if (!selectedAcc) {
+        currentSelectedAccountId = null;
+        savedAccountsSelect.value = '';
+        if (newTabAccountSelect) newTabAccountSelect.value = '';
+      } else {
+        savedAccountsSelect.value = selectedAcc.id;
       }
-      updateDropdownLabel(selectedAcc);
+      updateDropdownLabel(selectedAcc, selectedAcc ? '' : inputUsername.value.trim());
 
       // 3. Render danh sách dropdown có ô tìm kiếm
       renderSearchableDropdownList();
 
       // 4. Render danh sách bảng trong modal quản trị (hỗ trợ sửa tên gợi nhớ)
       renderModalTable();
-
-      if (!inputUsername.value && selectedAcc) {
-        fillForm(selectedAcc.id);
-      }
     }
 
     function escapeHtml(text) {
@@ -2190,7 +2226,17 @@
 
     savedAccountsSelect.addEventListener('change', (e) => {
       const id = e.target.value;
-      if (id) fillForm(id);
+      if (id) {
+        fillForm(id);
+      } else {
+        currentSelectedAccountId = null;
+        updateDropdownLabel(null);
+        renderSearchableDropdownList();
+      }
+    });
+
+    inputUsername.addEventListener('input', () => {
+      syncAccountSelectorByUsername(inputUsername.value);
     });
 
     // Lắng nghe sự kiện click/input cho Searchable Dropdown
@@ -2358,20 +2404,23 @@
         return;
       }
 
-      const existing = accountsList.find(a => a.username === user);
+      const existing = accountsList.find(a => String(a.username || '').trim().toLowerCase() === user.toLowerCase());
       if (existing) {
         existing.password = pass;
+        currentSelectedAccountId = existing.id;
         saveAccountsToServer();
         showToast(`Đã cập nhật mật khẩu cho ${user}!`, 'success');
       } else {
         const name = prompt('Nhập tên gợi nhớ (ví dụ: Điểm trạm Linh Sơn):', user);
-        accountsList.push({
+        const newAcc = {
           id: 'acc-' + Date.now(),
           name: name || user,
           username: user,
           password: pass,
           regionCode: 'region2'
-        });
+        };
+        accountsList.push(newAcc);
+        currentSelectedAccountId = newAcc.id;
         saveAccountsToServer();
         showToast(`Đã lưu tài khoản ${user} vào danh sách!`, 'success');
       }
@@ -2461,6 +2510,10 @@
         }
       }
 
+      if (targetTab.account && targetTab.account.username) {
+        syncAccountSelectorByUsername(targetTab.account.username);
+      }
+
       updateBottomUrlBar();
     }
 
@@ -2492,10 +2545,10 @@
 
       if (activeTabId === tabId) {
         const nextActive = tabs[Math.max(0, idx - 1)];
-        activeTabId = nextActive.id;
+        switchTab(nextActive.id);
+      } else {
+        renderTabsBar();
       }
-
-      renderTabsBar();
       showToast('Đã đóng tab.', 'info');
     }
 
@@ -2581,6 +2634,7 @@
         return;
       }
 
+      syncAccountSelectorByUsername(username);
       setLoading(true);
       try {
         let route = quickRouteSelect.value;
@@ -2721,6 +2775,7 @@
 
     // Tạo một Tab MỚI hoàn chỉnh
     async function createNewTabWithAuth(username, password, regionCode = 'region2', route = '/new/his/ngoaitru/tnkb/tiepnhan', customName = '') {
+      syncAccountSelectorByUsername(username);
       setLoading(true);
       try {
         if (route === '/new/his/chon-khoaphong') route = '/new/his/ngoaitru/tnkb/tiepnhan';
