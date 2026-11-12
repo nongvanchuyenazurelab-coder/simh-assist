@@ -45,6 +45,11 @@
     "route": "/canh-bao"
   },
   {
+    "id": "mod_nhanvien",
+    "name": "👤 Tạo nhanh Nhân viên & Tài khoản",
+    "route": "/tao-nhan-vien"
+  },
+  {
     "id": "mod_9",
     "name": "Màn hình Chọn khoa phòng",
     "route": "/new/his/chon-khoaphong"

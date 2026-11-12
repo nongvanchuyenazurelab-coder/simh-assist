@@ -128,6 +128,7 @@ const DEFAULT_MODULES = [
   { id: 'mod_7', name: '🛠️ Cấu hình Liên thông (KSK / ĐTĐT)', route: '/lien-thong-ksk' },
   { id: 'mod_8', name: '📊 Xuất Excel Danh mục DV (cURL)', route: '/excel-tool' },
   { id: 'mod_canhbao', name: '⚠️ Cảnh Báo Đơn Vị', route: '/canh-bao' },
+  { id: 'mod_nhanvien', name: '👤 Tạo nhanh Nhân viên & Tài khoản', route: '/tao-nhan-vien' },
   { id: 'mod_9', name: 'Màn hình Chọn khoa phòng', route: '/new/his/chon-khoaphong' },
   { id: 'mod_10', name: 'Màn hình Login gốc', route: '/new/his/dang-nhap' }
 ];
@@ -413,6 +414,16 @@ const server = http.createServer(async (req, res) => {
     if (fs.existsSync(canhBaoPath)) {
       res.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' });
       fs.createReadStream(canhBaoPath).pipe(res);
+      return;
+    }
+  }
+
+  // 1b4. Phục vụ trang Tạo nhanh Nhân viên & Tài khoản
+  if (pathname === '/tao-nhan-vien' || pathname === '/tao-nhan-vien.html') {
+    const nhanVienPath = path.join(PUBLIC_DIR, 'nhan-vien.html');
+    if (fs.existsSync(nhanVienPath)) {
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=UTF-8' });
+      fs.createReadStream(nhanVienPath).pipe(res);
       return;
     }
   }

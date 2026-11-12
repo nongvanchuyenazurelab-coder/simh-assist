@@ -1339,6 +1339,7 @@
             <option value="/lien-thong-ksk">🛠️ Cấu hình Liên thông (KSK / ĐTĐT)</option>
             <option value="/excel-tool">📊 Xuất Excel Danh mục DV (cURL)</option>
             <option value="/canh-bao">⚠️ Cảnh Báo Đơn Vị</option>
+            <option value="/tao-nhan-vien">👤 Tạo nhanh Nhân viên &amp; TK</option>
             <option value="/new/his/chon-khoaphong">Màn hình Chọn khoa phòng</option>
             <option value="/new/his/dang-nhap">Màn hình Login gốc</option>
             <option value="__manage_modules__" style="color: #2563eb; font-weight: bold;">⚙️ Tùy chỉnh danh sách module...</option>
@@ -1396,6 +1397,9 @@
         </button>
         <button type="button" id="btn-open-canhbao-tab" class="btn-tab-action" style="color: #b45309; border-color: #fde68a; background: #fffbeb; font-weight: 600;" title="Mở Dashboard Cảnh Báo Đơn Vị (Bệnh nhân chưa duyệt BHYT, KSK, ĐTĐT...)">
           ⚠️ Cảnh Báo Đơn Vị
+        </button>
+        <button type="button" id="btn-open-nhanvien-tab" class="btn-tab-action" style="color: #6d28d9; border-color: #ddd6fe; background: #f5f3ff; font-weight: 600;" title="Tạo nhanh Nhân viên và Tài khoản người dùng cho đơn vị hiện tại">
+          👤 Tạo nhanh NV &amp; TK
         </button>
       </div>
 
@@ -1638,6 +1642,7 @@
             <option value="/lien-thong-ksk">🛠️ Cấu hình Liên thông (KSK / ĐTĐT / Viện phí)</option>
             <option value="/excel-tool">📊 Xuất Excel Danh mục DV (cURL)</option>
             <option value="/canh-bao">⚠️ Cảnh Báo Đơn Vị</option>
+            <option value="/tao-nhan-vien">👤 Tạo nhanh Nhân viên &amp; TK</option>
           </select>
         </div>
       </div>
@@ -1766,6 +1771,7 @@
     const btnOpenKskTab = document.getElementById('btn-open-ksk-tab');
     const btnOpenExcelTab = document.getElementById('btn-open-excel-tab');
     const btnOpenCanhbaoTab = document.getElementById('btn-open-canhbao-tab');
+    const btnOpenNhanvienTab = document.getElementById('btn-open-nhanvien-tab');
 
     // Bottom Bar Elements
     const bottomBar = document.getElementById('bottom-bar');
@@ -2436,7 +2442,8 @@
 
         const tabIcon = tab.type === 'canh-bao' || tab.route?.includes('canh-bao') ? '⚠️' :
                         tab.type === 'ksk' || tab.route?.includes('lien-thong') ? '🛠️' :
-                        tab.type === 'excel' || tab.route?.includes('excel') ? '📊' : '🏥';
+                        tab.type === 'excel' || tab.route?.includes('excel') ? '📊' :
+                        tab.type === 'nhan-vien' || tab.route?.includes('tao-nhan-vien') ? '👤' : '🏥';
 
         item.innerHTML = `
           <span class="tab-icon">${tabIcon}</span>
@@ -2593,6 +2600,9 @@
       } else if (route === '/canh-bao' || route.startsWith('/canh-bao')) {
         const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
         iframe.src = `/canh-bao${tokenQuery}`;
+      } else if (route === '/tao-nhan-vien' || route.startsWith('/tao-nhan-vien')) {
+        const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
+        iframe.src = `/tao-nhan-vien${tokenQuery}`;
       } else {
         // Nạp phiên làm việc qua route /init-session trên subdomain độc lập (hoặc origin hiện tại)
         const targetOrigin = getTabOrigin(subdomain);
@@ -2621,6 +2631,39 @@
         throw new Error(result.message || 'Đăng nhập không thành công');
       }
       return result;
+    }
+
+    const TOKEN_TOOL_ROUTES = ['/lien-thong-ksk', '/canh-bao', '/tao-nhan-vien'];
+    const ALL_TOOL_ROUTES = [...TOKEN_TOOL_ROUTES, '/excel-tool'];
+
+    function isToolTabObj(t) {
+      if (!t) return false;
+      if (t.type || t.id.startsWith('tab_ksk_') || t.id.startsWith('tab_canhbao_') || t.id.startsWith('tab_excel_') || t.id.startsWith('tab_nhanvien_')) {
+        return true;
+      }
+      return Boolean(t.route && ALL_TOOL_ROUTES.some(r => t.route.startsWith(r)));
+    }
+
+    function broadcastTokenToToolFrames(accountObj, sessionId) {
+      if (!accountObj || !accountObj.accessToken) return;
+      const iframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"], iframe[src*="tao-nhan-vien"]');
+      iframes.forEach(f => {
+        try {
+          f.contentWindow.postMessage({
+            type: 'SET_TOKEN',
+            token: accountObj.accessToken,
+            username: accountObj.username || '',
+            companyName: accountObj.companyName || '',
+            fullName: accountObj.fullName || ''
+          }, '*');
+        } catch(e) {}
+      });
+      tabs.forEach(t => {
+        if (isToolTabObj(t)) {
+          t.account = { ...accountObj };
+          if (sessionId) t.sid = sessionId;
+        }
+      });
     }
 
     // Đăng nhập và cập nhật Tab HIỆN TẠI
@@ -2653,10 +2696,10 @@
         const userInfo = data.userInfo;
         const titleName = defaultKhoa?.name || userInfo?.fullName || username;
 
-        const isToolTab = currentTab.id.startsWith('tab_canhbao_') || currentTab.id.startsWith('tab_ksk_') || currentTab.id.startsWith('tab_excel_') || Boolean(currentTab.type) || (currentTab.route && (currentTab.route.startsWith('/lien-thong-ksk') || currentTab.route.startsWith('/canh-bao') || currentTab.route.startsWith('/excel-tool')));
+        const isToolTab = isToolTabObj(currentTab);
 
         if (isToolTab) {
-          // TRƯỜNG HỢP 1: ĐANG Ở TAB CÔNG CỤ (Cấu hình liên thông/nghiệp vụ, Cảnh báo, Xuất Excel):
+          // TRƯỜNG HỢP 1: ĐANG Ở TAB CÔNG CỤ (Cấu hình liên thông/nghiệp vụ, Cảnh báo, Xuất Excel, Tạo nhanh NV & TK):
           // 1. Giữ nguyên tab công cụ hiện tại, không chuyển thành tab HIS, cập nhật account & token cho nó
           currentTab.account = {
             username: username,
@@ -2670,7 +2713,7 @@
 
           // 2. Tự động đồng bộ và nạp phiên làm việc của đơn vị mới sang TẤT CẢ các tab HIS nghiệp vụ (Khám bệnh, Tiếp nhận...)
           // Để khi người dùng bấm quay lại các màn nghiệp vụ thì màn hình đó ĐÃ CHUYỂN sang đơn vị vừa đăng nhập!
-          const hisTabs = tabs.filter(t => !t.type && !t.id.startsWith('tab_ksk_') && !t.id.startsWith('tab_canhbao_') && !t.id.startsWith('tab_excel_') && !(t.route && (t.route.startsWith('/lien-thong-ksk') || t.route.startsWith('/canh-bao') || t.route.startsWith('/excel-tool'))));
+          const hisTabs = tabs.filter(t => !isToolTabObj(t));
 
           if (hisTabs.length > 0) {
             hisTabs.forEach(hisTab => {
@@ -2719,10 +2762,9 @@
           // Cập nhật lại src cho iframe của tab công cụ hiện tại nếu cần
           const toolIframe = document.getElementById('frame-' + currentTab.id);
           if (toolIframe) {
-            if (currentTab.route.startsWith('/lien-thong-ksk')) {
-              toolIframe.src = `/lien-thong-ksk?token=${encodeURIComponent(data.accessToken)}`;
-            } else if (currentTab.route.startsWith('/canh-bao')) {
-              toolIframe.src = `/canh-bao?token=${encodeURIComponent(data.accessToken)}`;
+            const matchedToolRoute = TOKEN_TOOL_ROUTES.find(r => currentTab.route && currentTab.route.startsWith(r));
+            if (matchedToolRoute) {
+              toolIframe.src = `${matchedToolRoute}?token=${encodeURIComponent(data.accessToken)}`;
             }
           }
         } else {
@@ -2746,21 +2788,11 @@
           }
 
           // Đồng bộ thông tin account sang các tab công cụ nếu đang mở
-          tabs.forEach(t => {
-            if (t.type === 'ksk' || t.id.startsWith('tab_ksk_') || t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_') || t.type === 'excel' || t.id.startsWith('tab_excel_')) {
-              t.account = { ...currentTab.account };
-              t.sid = sessionId;
-            }
-          });
+          broadcastTokenToToolFrames(currentTab.account, sessionId);
         }
 
-        // Luôn đồng bộ Token sang tất cả iframe Cấu hình liên thông & Cảnh báo đang mở qua postMessage
-        const kskIframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"]');
-        kskIframes.forEach(f => {
-          try {
-            f.contentWindow.postMessage({ type: 'SET_TOKEN', token: data.accessToken, username: username }, '*');
-          } catch(e) {}
-        });
+        // Luôn đồng bộ Token sang tất cả iframe công cụ đang mở qua postMessage
+        broadcastTokenToToolFrames(currentTab.account, sessionId);
 
         renderTabsBar();
         updateSessionBadge(currentTab.account);
@@ -2813,18 +2845,7 @@
         activeTabId = newTabId;
 
         // Đồng bộ token sang các tab công cụ nếu đang mở
-        const kskIframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"]');
-        kskIframes.forEach(f => {
-          try {
-            f.contentWindow.postMessage({ type: 'SET_TOKEN', token: data.accessToken, username: username }, '*');
-          } catch(e) {}
-        });
-        tabs.forEach(t => {
-          if (t.type === 'ksk' || t.id.startsWith('tab_ksk_') || t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_') || t.type === 'excel' || t.id.startsWith('tab_excel_')) {
-            t.account = { ...newTab.account };
-            t.sid = sessionId;
-          }
-        });
+        broadcastTokenToToolFrames(newTab.account, sessionId);
 
         renderTabsBar();
         showToast(`Đã mở Tab mới: ${tabTitle}!`, 'success');
@@ -2836,54 +2857,72 @@
       }
     }
 
-    // Mở Tab riêng cho Cấu hình Liên thông KSK / ĐTĐT / Viện phí
-    function openKskTab() {
-      const existing = tabs.find(t => t.type === 'ksk' || t.id.startsWith('tab_ksk_') || (t.route && t.route.startsWith('/lien-thong-ksk')));
+    function openTokenToolTab({ type, idPrefix, route, title, toastExisting, toastCreated }) {
+      const existing = tabs.find(t => t.type === type || t.id.startsWith(idPrefix) || (t.route && t.route.startsWith(route)));
       const currentActive = tabs.find(t => t.id === activeTabId);
+      const sourceAccount = currentActive?.account?.accessToken
+        ? currentActive.account
+        : (tabs.find(t => t.account?.accessToken)?.account || existing?.account || null);
+      const bestTok = sourceAccount?.accessToken || '';
 
       if (existing) {
+        if (sourceAccount) existing.account = { ...sourceAccount };
         switchTab(existing.id);
         const iframe = document.getElementById('frame-' + existing.id);
-        const bestTok = currentActive?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
         if (iframe) {
           const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
-          const targetSrc = `/lien-thong-ksk${tQuery}`;
-          if (!iframe.src || !iframe.src.includes('/lien-thong-ksk')) {
+          const targetSrc = `${route}${tQuery}`;
+          if (!iframe.src || !iframe.src.includes(route)) {
             iframe.src = targetSrc;
           } else if (bestTok) {
             try {
-              iframe.contentWindow.postMessage({ type: 'SET_TOKEN', token: bestTok }, '*');
+              iframe.contentWindow.postMessage({
+                type: 'SET_TOKEN',
+                token: bestTok,
+                username: sourceAccount?.username || '',
+                companyName: sourceAccount?.companyName || '',
+                fullName: sourceAccount?.fullName || ''
+              }, '*');
             } catch(e) {}
           }
           iframe.classList.add('active');
           iframe.style.display = 'block';
         }
-        showToast('Đã chuyển sang Tab Cấu hình Liên thông.', 'info');
+        showToast(toastExisting, 'info');
         return;
       }
 
       tabCounter++;
-      const newTabId = 'tab_ksk_' + Date.now();
+      const newTabId = idPrefix + Date.now();
       const subdomain = 't' + tabCounter;
-      const currentTab = tabs.find(t => t.id === activeTabId);
-      const bestTok = currentTab?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || '';
-
       const newTab = {
         id: newTabId,
         subdomain: subdomain,
-        title: '🛠️ Cấu hình Liên thông',
-        type: 'ksk',
-        account: currentTab ? { ...currentTab.account } : null,
-        sid: currentTab?.sid || null,
-        route: '/lien-thong-ksk'
+        title: title,
+        type: type,
+        account: sourceAccount ? { ...sourceAccount } : null,
+        sid: currentActive?.sid || null,
+        route: route
       };
 
       tabs.push(newTab);
-      createTabIframe(newTabId, subdomain, '', '/lien-thong-ksk', bestTok);
+      createTabIframe(newTabId, subdomain, '', route, bestTok);
       activeTabId = newTabId;
 
       renderTabsBar();
-      showToast('Đã mở Tab Cấu hình Nghiệp vụ (KSK, ĐTĐT, Viện Phí, Mẹ & Bé, Dược)!', 'success');
+      showToast(toastCreated, 'success');
+    }
+
+    // Mở Tab riêng cho Cấu hình Liên thông KSK / ĐTĐT / Viện phí
+    function openKskTab() {
+      openTokenToolTab({
+        type: 'ksk',
+        idPrefix: 'tab_ksk_',
+        route: '/lien-thong-ksk',
+        title: '🛠️ Cấu hình Liên thông',
+        toastExisting: 'Đã chuyển sang Tab Cấu hình Liên thông.',
+        toastCreated: 'Đã mở Tab Cấu hình Nghiệp vụ (KSK, ĐTĐT, Viện Phí, Mẹ & Bé, Dược)!'
+      });
     }
 
     if (btnOpenKskTab) {
@@ -2938,56 +2977,34 @@
 
     // Mở Tab riêng cho Cảnh Báo Đơn Vị (Bệnh nhân chưa duyệt BHYT, KSK, Dược VTTH, v.v.)
     function openCanhBaoTab() {
-      const existing = tabs.find(t => t.type === 'canh-bao' || t.id.startsWith('tab_canhbao_') || (t.route && t.route.startsWith('/canh-bao')));
-      const currentActive = tabs.find(t => t.id === activeTabId);
-
-      if (existing) {
-        switchTab(existing.id);
-        const iframe = document.getElementById('frame-' + existing.id);
-        const bestTok = currentActive?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || existing.account?.accessToken || '';
-        if (iframe) {
-          const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
-          const targetSrc = `/canh-bao${tQuery}`;
-          if (!iframe.src || !iframe.src.includes('/canh-bao')) {
-            iframe.src = targetSrc;
-          } else if (bestTok) {
-            try {
-              iframe.contentWindow.postMessage({ type: 'SET_TOKEN', token: bestTok }, '*');
-            } catch(e) {}
-          }
-          iframe.classList.add('active');
-          iframe.style.display = 'block';
-        }
-        showToast('Đã chuyển sang Tab Cảnh Báo Đơn Vị.', 'info');
-        return;
-      }
-
-      tabCounter++;
-      const newTabId = 'tab_canhbao_' + Date.now();
-      const subdomain = 't' + tabCounter;
-      const currentTab = tabs.find(t => t.id === activeTabId);
-      const bestTok = currentTab?.account?.accessToken || tabs.find(t => t.account?.accessToken)?.account?.accessToken || '';
-
-      const newTab = {
-        id: newTabId,
-        subdomain: subdomain,
-        title: '⚠️ Cảnh Báo Đơn Vị',
+      openTokenToolTab({
         type: 'canh-bao',
-        account: currentTab ? { ...currentTab.account } : null,
-        sid: currentTab?.sid || null,
-        route: '/canh-bao'
-      };
-
-      tabs.push(newTab);
-      createTabIframe(newTabId, subdomain, '', '/canh-bao', bestTok);
-      activeTabId = newTabId;
-
-      renderTabsBar();
-      showToast('Đã mở Tab Cảnh Báo Đơn Vị!', 'success');
+        idPrefix: 'tab_canhbao_',
+        route: '/canh-bao',
+        title: '⚠️ Cảnh Báo Đơn Vị',
+        toastExisting: 'Đã chuyển sang Tab Cảnh Báo Đơn Vị.',
+        toastCreated: 'Đã mở Tab Cảnh Báo Đơn Vị!'
+      });
     }
 
     if (btnOpenCanhbaoTab) {
       btnOpenCanhbaoTab.addEventListener('click', openCanhBaoTab);
+    }
+
+    // Mở Tab riêng cho Tạo nhanh Nhân viên & Người dùng
+    function openNhanVienTab() {
+      openTokenToolTab({
+        type: 'nhan-vien',
+        idPrefix: 'tab_nhanvien_',
+        route: '/tao-nhan-vien',
+        title: '👤 Tạo nhanh NV & TK',
+        toastExisting: 'Đã chuyển sang Tab Tạo nhanh Nhân viên & Tài khoản.',
+        toastCreated: 'Đã mở Tab Tạo nhanh Nhân viên & Tài khoản!'
+      });
+    }
+
+    if (btnOpenNhanvienTab) {
+      btnOpenNhanvienTab.addEventListener('click', openNhanVienTab);
     }
 
     // Sự kiện nút trên Header
@@ -3017,20 +3034,14 @@
         openModulesModal();
         return;
       }
-      if (route === '/lien-thong-ksk') {
-        openKskTab();
-        const currentTab = tabs.find(t => t.id === activeTabId);
-        if (currentTab && currentTab.route) quickRouteSelect.value = currentTab.route;
-        return;
-      }
-      if (route === '/excel-tool') {
-        openExcelToolTab();
-        const currentTab = tabs.find(t => t.id === activeTabId);
-        if (currentTab && currentTab.route) quickRouteSelect.value = currentTab.route;
-        return;
-      }
-      if (route === '/canh-bao') {
-        openCanhBaoTab();
+      const toolRouteHandlers = {
+        '/lien-thong-ksk': openKskTab,
+        '/excel-tool': openExcelToolTab,
+        '/canh-bao': openCanhBaoTab,
+        '/tao-nhan-vien': openNhanVienTab
+      };
+      if (toolRouteHandlers[route]) {
+        toolRouteHandlers[route]();
         const currentTab = tabs.find(t => t.id === activeTabId);
         if (currentTab && currentTab.route) quickRouteSelect.value = currentTab.route;
         return;
@@ -3094,6 +3105,12 @@
         const tok = tab.account?.accessToken || '';
         const query = tok ? `?token=${encodeURIComponent(tok)}` : '';
         return `${window.location.origin}/canh-bao${query}`;
+      }
+
+      if (tab.route === '/tao-nhan-vien' || tab.route?.startsWith('/tao-nhan-vien')) {
+        const tok = tab.account?.accessToken || '';
+        const query = tok ? `?token=${encodeURIComponent(tok)}` : '';
+        return `${window.location.origin}/tao-nhan-vien${query}`;
       }
 
       // Đổi subdomain proxy (t1/t2...localhost:8888) thành đúng URL gốc của frame ytcs.hmis.vn
@@ -3168,6 +3185,8 @@
           } else if (fullRoute.startsWith('/excel-tool')) {
             displayUrl = `${window.location.origin}${fullRoute}`;
           } else if (fullRoute.startsWith('/canh-bao')) {
+            displayUrl = `${window.location.origin}${fullRoute}`;
+          } else if (fullRoute.startsWith('/tao-nhan-vien')) {
             displayUrl = `${window.location.origin}${fullRoute}`;
           } else {
             displayUrl = `https://ytcs.hmis.vn${fullRoute.startsWith('/') ? fullRoute : '/' + fullRoute}`;
@@ -3280,6 +3299,9 @@
       } else if (targetPath === '/excel-tool' || targetPath.startsWith('/excel-tool')) {
         iframe.src = `${window.location.origin}${targetPath}`;
       } else if (targetPath === '/canh-bao' || targetPath.startsWith('/canh-bao')) {
+        const tok = activeTab.account?.accessToken || '';
+        iframe.src = `${window.location.origin}${targetPath}${tok ? '?token=' + encodeURIComponent(tok) : ''}`;
+      } else if (targetPath === '/tao-nhan-vien' || targetPath.startsWith('/tao-nhan-vien')) {
         const tok = activeTab.account?.accessToken || '';
         iframe.src = `${window.location.origin}${targetPath}${tok ? '?token=' + encodeURIComponent(tok) : ''}`;
       } else {
@@ -3458,6 +3480,7 @@
       { id: 'mod_7', name: '🛠️ Cấu hình Liên thông (KSK / ĐTĐT)', route: '/lien-thong-ksk' },
       { id: 'mod_8', name: '📊 Xuất Excel Danh mục DV (cURL)', route: '/excel-tool' },
       { id: 'mod_canhbao', name: '⚠️ Cảnh Báo Đơn Vị', route: '/canh-bao' },
+      { id: 'mod_nhanvien', name: '👤 Tạo nhanh Nhân viên & Tài khoản', route: '/tao-nhan-vien' },
       { id: 'mod_9', name: 'Màn hình Chọn khoa phòng', route: '/new/his/chon-khoaphong' },
       { id: 'mod_10', name: 'Màn hình Login gốc', route: '/new/his/dang-nhap' }
     ];

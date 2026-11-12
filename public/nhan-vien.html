@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tạo Nhanh Nhân Viên &amp; Người Dùng - YTCS HMIS</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: #eff6ff;
+      --purple: #7c3aed;
+      --purple-soft: #f5f3ff;
+      --success: #059669;
+      --success-soft: #ecfdf5;
+      --warning: #d97706;
+      --warning-soft: #fffbeb;
+      --danger: #dc2626;
+      --danger-soft: #fef2f2;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --muted: #64748b;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .topbar {
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 9px;
+      background: linear-gradient(135deg, #6d28d9, #2563eb);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.25);
+    }
+    .brand h1 {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .brand p {
+      margin: 2px 0 0;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .unit-pills {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      color: #334155;
+    }
+    .pill.ok { background: var(--success-soft); border-color: #a7f3d0; color: #065f46; }
+    .pill.warn { background: var(--warning-soft); border-color: #fde68a; color: #92400e; }
+    .pill.err { background: var(--danger-soft); border-color: #fecaca; color: #991b1b; }
+    .pill.purple { background: var(--purple-soft); border-color: #ddd6fe; color: #5b21b6; }
+
+    .container {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 14px 18px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .token-bar {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+    .token-bar label {
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+    }
+    .token-bar input {
+      flex: 1;
+      min-width: 240px;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      color: #1e293b;
+      background: #f8fafc;
+    }
+    .token-bar input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: minmax(420px, 1.08fr) minmax(380px, 0.92fr);
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .grid-main { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+      overflow: hidden;
+    }
+    .card-header {
+      padding: 11px 15px;
+      border-bottom: 1px solid var(--border);
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .card-body {
+      padding: 15px;
+    }
+
+    .mode-tabs {
+      display: inline-flex;
+      background: #e2e8f0;
+      padding: 3px;
+      border-radius: 8px;
+      gap: 3px;
+    }
+    .mode-tab {
+      border: none;
+      background: transparent;
+      padding: 5px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .mode-tab.active {
+      background: #fff;
+      color: var(--purple);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .form-grid .full { grid-column: 1 / -1; }
+    @media (max-width: 600px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+    }
+    .req { color: var(--danger); }
+    .hint {
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 400;
+    }
+    .input, .textarea, .select {
+      width: 100%;
+      border: 1px solid #cbd5e1;
+      border-radius: 7px;
+      padding: 7px 10px;
+      font-size: 13px;
+      color: var(--text);
+      background: #fff;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input { height: 36px; }
+    .input:focus, .textarea:focus, .select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    .mono {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .summary-strip {
+      margin-top: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--purple-soft);
+      border: 1px solid #ddd6fe;
+      font-size: 12px;
+      color: #4c1d95;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      align-items: center;
+    }
+    .summary-strip code {
+      background: rgba(255, 255, 255, 0.85);
+      padding: 1px 6px;
+      border-radius: 4px;
+      border: 1px solid #ddd6fe;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #5b21b6;
+    }
+
+    details.defaults-box {
+      margin-top: 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: #f8fafc;
+    }
+    details.defaults-box summary {
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 12.5px;
+      color: #334155;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      user-select: none;
+    }
+    details.defaults-box[open] summary {
+      border-bottom: 1px solid var(--border);
+      background: #f1f5f9;
+    }
+    .defaults-inner {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .defaults-section-title {
+      font-size: 11.5px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+      color: #475569;
+      margin-bottom: 6px;
+    }
+    .defaults-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      gap: 8px 10px;
+    }
+    @media (max-width: 680px) {
+      .defaults-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .defaults-grid .input {
+      height: 31px;
+      font-size: 12px;
+      padding: 4px 8px;
+    }
+
+    .actions-row {
+      margin-top: 14px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .btn-sm { height: 30px; padding: 0 10px; font-size: 12px; border-radius: 6px; }
+    .btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #4f46e5);
+      color: #fff;
+      box-shadow: 0 2px 5px rgba(37, 99, 235, 0.25);
+    }
+    .btn-primary:hover:not(:disabled) {
+      filter: brightness(1.06);
+      transform: translateY(-1px);
+    }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+    .btn-warning { background: var(--warning); color: #fff; }
+    .btn-outline {
+      background: #fff;
+      border-color: #cbd5e1;
+      color: #334155;
+    }
+    .btn-outline:hover:not(:disabled) { background: #f8fafc; border-color: #94a3b8; }
+    .btn-purple-soft {
+      background: var(--purple-soft);
+      border-color: #ddd6fe;
+      color: #5b21b6;
+    }
+    .btn-purple-soft:hover:not(:disabled) { background: #ede9fe; }
+
+    /* Pipeline status */
+    .pipeline {
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .step-card {
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      padding: 10px 12px;
+      background: #fff;
+    }
+    .step-card.running { border-color: #93c5fd; background: #eff6ff; }
+    .step-card.success { border-color: #86efac; background: #f0fdf4; }
+    .step-card.error { border-color: #fca5a5; background: #fef2f2; }
+    .step-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 12.5px;
+    }
+    .step-msg {
+      margin-top: 5px;
+      font-size: 12px;
+      color: #334155;
+      word-break: break-word;
+    }
+
+    pre.json-view {
+      margin: 8px 0 0;
+      padding: 10px;
+      border-radius: 7px;
+      background: #0f172a;
+      color: #e2e8f0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 11.5px;
+      max-height: 260px;
+      overflow: auto;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    /* Table */
+    .table-tools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: auto;
+      max-height: 540px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    thead th {
+      position: sticky;
+      top: 0;
+      background: #f1f5f9;
+      color: #334155;
+      text-align: left;
+      padding: 8px 9px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    tbody td {
+      padding: 7px 9px;
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+    tbody tr:hover { background: #f8fafc; }
+    .badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-ok { background: #dcfce7; color: #166534; }
+    .badge-err { background: #fee2e2; color: #991b1b; }
+    .badge-info { background: #dbeafe; color: #1e40af; }
+    .badge-muted { background: #f1f5f9; color: #475569; }
+
+    .hidden { display: none !important; }
+
+    #toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      padding: 10px 15px;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #fff;
+      font-size: 12.5px;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(15, 23, 42, 0.25);
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(10px);
+      transition: all 0.2s;
+      z-index: 999;
+      max-width: 420px;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    #toast.success { background: #065f46; }
+    #toast.error { background: #991b1b; }
+    #toast.warning { background: #92400e; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-icon">👤</div>
+      <div>
+        <h1>Tạo Nhanh Nhân Viên &amp; Người Dùng</h1>
+        <p>Tự động gọi <code>officer/create</code> ➔ lấy ID ➔ gọi <code>admuser/dangky</code> cho đơn vị đang đăng nhập</p>
+      </div>
+    </div>
+    <div class="unit-pills" id="unitPills">
+      <span class="pill warn" id="pillTokenStatus">Chưa có Token</span>
+      <span class="pill hidden" id="pillUnitName"></span>
+      <span class="pill hidden" id="pillCsyt"></span>
+      <span class="pill hidden" id="pillUser"></span>
+      <span class="pill hidden" id="pillExp"></span>
+    </div>
+  </header>
+
+  <main class="container">
+    <!-- Token Bar -->
+    <section class="token-bar">
+      <label for="tokenInput">🔑 Bearer Token:</label>
+      <input
+        type="text"
+        id="tokenInput"
+        placeholder="Tự động đồng bộ từ Tab đang đăng nhập, hoặc dán Bearer Token / lệnh cURL vào đây..."
+        autocomplete="off"
+      >
+      <button type="button" class="btn btn-outline btn-sm" id="btnApplyToken">✓ Áp dụng Token</button>
+      <button type="button" class="btn btn-purple-soft btn-sm" id="btnRefreshOfficers">🔄 Tải DS Nhân viên</button>
+    </section>
+
+    <div class="grid-main">
+      <!-- Left: Quick Create Form & Pipeline -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">⚡ Nhập Thông Tin Nhân Viên Mới</div>
+          <div class="mode-tabs">
+            <button type="button" class="mode-tab active" id="tabModeSingle">Tạo 1 nhân viên</button>
+            <button type="button" class="mode-tab" id="tabModeBatch">Tạo hàng loạt</button>
+          </div>
+        </div>
+
+        <div class="card-body">
+          <!-- SINGLE MODE -->
+          <div id="panelSingle">
+            <div class="form-grid">
+              <div class="field full">
+                <label for="inputOfficerName">
+                  <span>Tên nhân viên <span class="req">*</span></span>
+                  <span class="hint">Gửi vào officerName &amp; fullName</span>
+                </label>
+                <input
+                  type="text"
+                  id="inputOfficerName"
+                  class="input"
+                  placeholder="Ví dụ: ĐIỂM TRẠM Y TẾ TÍCH LƯƠNG 3"
+                >
+              </div>
+
+              <div class="field">
+                <label for="inputOfficerCode">
+                  <span>Mã nhân viên <span class="req">*</span></span>
+                  <button type="button" id="btnPrefixCsyt" class="btn btn-outline btn-sm hidden" style="height:20px;padding:0 6px;font-size:11px;" title="Chèn tiền tố mã CSYT">+ Tiền tố CSYT</button>
+                </label>
+                <input
+                  type="text"
+                  id="inputOfficerCode"
+                  class="input mono"
+                  placeholder="Ví dụ: 19112.dttichluong3"
+                >
+                <span class="hint">Dùng làm officerCode, cmnd &amp; Tên đăng nhập (username)</span>
+              </div>
+
+              <div class="field">
+                <label for="inputMaBacSi">
+                  <span>Mã bác sĩ</span>
+                  <span class="hint">Để trống = null</span>
+                </label>
+                <input
+                  type="text"
+                  id="inputMaBacSi"
+                  class="input mono"
+                  placeholder="Ví dụ: 001234/TNG-CCHN (hoặc để trống)"
+                >
+                <span class="hint">Gửi vào maBacSi trong officer/create</span>
+              </div>
+            </div>
+
+            <div class="summary-strip" id="accountSummaryStrip">
+              <span>🔐 Tài khoản sẽ tạo ở Bước 2:</span>
+              <span>Username: <code id="previewUsername">(chưa nhập)</code></span>
+              <span>Mật khẩu: <code id="previewPwd">Hmis@2026</code></span>
+              <span>Level: <code id="previewLevel">4</code></span>
+              <span>Role ID: <code id="previewRole">204</code></span>
+              <span>Chức danh: <code id="previewSign">1002</code></span>
+            </div>
+          </div>
+
+          <!-- BATCH MODE -->
+          <div id="panelBatch" class="hidden">
+            <div class="field">
+              <label for="batchTextarea">
+                <span>Danh sách nhân viên (mỗi dòng 1 người) <span class="req">*</span></span>
+                <span class="hint">Định dạng: Tên NV | Mã NV | Mã bác sĩ (hoặc copy 3 cột từ Excel)</span>
+              </label>
+              <textarea
+                id="batchTextarea"
+                class="textarea mono"
+                rows="6"
+                placeholder="ĐIỂM TRẠM Y TẾ TÍCH LƯƠNG 3 | 19112.dttichluong3 | &#10;BÁC SĨ NGUYỄN VĂN A | 19112.bsa | 001234/TNG-CCHN"
+              ></textarea>
+            </div>
+            <div id="batchPreviewWrap" class="hidden" style="margin-top:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+                <strong style="font-size:12px;" id="batchPreviewCount">0 dòng hợp lệ</strong>
+              </div>
+              <div class="table-wrap" style="max-height:190px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Tên nhân viên</th>
+                      <th>Mã NV / Username</th>
+                      <th>Mã BS</th>
+                      <th>Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody id="batchPreviewBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- COLLAPSIBLE DEFAULTS -->
+          <details class="defaults-box" id="defaultsDetails">
+            <summary>
+              <span>⚙️ Thông số mặc định API (đã cấu hình sẵn theo API chuẩn)</span>
+              <span class="hint" id="defaultsSummaryText">Khoa: 200 · TT12: K01 · Role: 204 · Title: 1002</span>
+            </summary>
+            <div class="defaults-inner">
+              <div>
+                <div class="defaults-section-title">1. API Thêm nhân viên (<code>/api/common/officer/create</code>)</div>
+                <div class="defaults-grid">
+                  <div class="field">
+                    <label for="defKhoaId">Khoa ID</label>
+                    <input type="number" id="defKhoaId" class="input mono" value="200">
+                  </div>
+                  <div class="field">
+                    <label for="defMaKhoaTT12">Mã khoa đẩy cổng</label>
+                    <input type="text" id="defMaKhoaTT12" class="input mono" value="K01">
+                  </div>
+                  <div class="field">
+                    <label for="defPhamVi">Phạm vi chuyên môn</label>
+                    <input type="text" id="defPhamVi" class="input" value="Khám bệnh">
+                  </div>
+                  <div class="field">
+                    <label for="defDanTocId">Dân tộc ID</label>
+                    <input type="number" id="defDanTocId" class="input mono" value="101">
+                  </div>
+                  <div class="field">
+                    <label for="defTgDk">TG ĐK hành nghề</label>
+                    <input type="number" id="defTgDk" class="input mono" value="1">
+                  </div>
+                  <div class="field">
+                    <label for="defTuNgay">Từ ngày (ISO UTC)</label>
+                    <input type="text" id="defTuNgay" class="input mono" value="2025-12-31T17:00:00.000Z">
+                  </div>
+                  <div class="field">
+                    <label for="defChucDanhNn">Chức danh NN</label>
+                    <input type="number" id="defChucDanhNn" class="input mono" value="1">
+                  </div>
+                  <div class="field">
+                    <label for="defCompanyId">Company ID</label>
+                    <input type="number" id="defCompanyId" class="input mono" value="1">
+                  </div>
+                  <div class="field">
+                    <label for="defCmnd">CMND (trống = Mã NV)</label>
+                    <input type="text" id="defCmnd" class="input mono" placeholder="Tự lấy Mã NV">
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div class="defaults-section-title">2. API Đăng ký người dùng (<code>/api/common/admuser/dangky</code>)</div>
+                <div class="defaults-grid">
+                  <div class="field">
+                    <label for="defUserPwd">Mật khẩu mặc định</label>
+                    <input type="text" id="defUserPwd" class="input mono" value="Hmis@2026">
+                  </div>
+                  <div class="field">
+                    <label for="defUserLevel">Mức truy cập (userLevel)</label>
+                    <input type="number" id="defUserLevel" class="input mono" value="4">
+                  </div>
+                  <div class="field">
+                    <label for="defUserType">Loại tài khoản (userType)</label>
+                    <input type="number" id="defUserType" class="input mono" value="0">
+                  </div>
+                  <div class="field">
+                    <label for="defRoleId">Nhóm người dùng (roleId)</label>
+                    <input type="number" id="defRoleId" class="input mono" value="204">
+                  </div>
+                  <div class="field">
+                    <label for="defSignTitleId">Chức danh ký (signTitle)</label>
+                    <input type="number" id="defSignTitleId" class="input mono" value="1002">
+                  </div>
+                  <div class="field">
+                    <label for="defUserStatus">Trạng thái TK (status)</label>
+                    <input type="number" id="defUserStatus" class="input mono" value="1">
+                  </div>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
+                <button type="button" class="btn btn-outline btn-sm" id="btnResetDefaults">↺ Khôi phục mặc định chuẩn</button>
+                <button type="button" class="btn btn-purple-soft btn-sm" id="btnInspectUnitMeta">🔍 Kiểm tra Khoa / Role / Chức danh của đơn vị</button>
+              </div>
+              <div id="unitMetaBox" class="hidden" style="font-size:12px;background:#fff;border:1px solid var(--border);border-radius:7px;padding:8px 10px;"></div>
+            </div>
+          </details>
+
+          <!-- ACTION BUTTONS -->
+          <div class="actions-row">
+            <button type="button" class="btn btn-primary" id="btnExecuteCreate">
+              ⚡ Tạo Nhân Viên &amp; Người Dùng
+            </button>
+            <button type="button" class="btn btn-warning hidden" id="btnRetryStep2">
+              🔄 Chỉ chạy lại Bước 2 (Đăng ký TK)
+            </button>
+            <button type="button" class="btn btn-outline" id="btnPreviewPayload">
+              🔍 Xem JSON Payload
+            </button>
+            <button type="button" class="btn btn-outline" id="btnResetForm">
+              🧹 Xóa form
+            </button>
+          </div>
+
+          <!-- LIVE RESULT / PAYLOAD PIPELINE -->
+          <div class="pipeline hidden" id="pipelineArea">
+            <div class="step-card" id="step1Card">
+              <div class="step-head">
+                <span>Bước 1: Tạo Nhân Viên (<code>POST /api/common/officer/create</code>)</span>
+                <span class="badge badge-muted" id="step1Badge">Chờ</span>
+              </div>
+              <div class="step-msg" id="step1Msg">Chưa thực hiện</div>
+              <details id="step1JsonDetails" class="hidden" style="margin-top:6px;">
+                <summary style="cursor:pointer;font-size:11.5px;color:#475569;font-weight:600;">Xem Request / Response JSON Bước 1</summary>
+                <pre class="json-view" id="step1JsonPre"></pre>
+              </details>
+            </div>
+
+            <div class="step-card" id="step2Card">
+              <div class="step-head">
+                <span>Bước 2: Đăng ký Người Dùng (<code>POST /api/common/admuser/dangky</code>)</span>
+                <span class="badge badge-muted" id="step2Badge">Chờ</span>
+              </div>
+              <div class="step-msg" id="step2Msg">Chờ kết quả từ Bước 1</div>
+              <details id="step2JsonDetails" class="hidden" style="margin-top:6px;">
+                <summary style="cursor:pointer;font-size:11.5px;color:#475569;font-weight:600;">Xem Request / Response JSON Bước 2</summary>
+                <pre class="json-view" id="step2JsonPre"></pre>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Right: Existing Officers & Account Check (Read-Only) -->
+      <section class="card">
+        <div class="card-header">
+          <div class="card-title">📋 Nhân Viên Hiện Có Tại Đơn Vị <span class="badge badge-info" id="officerCountBadge">0</span></div>
+          <button type="button" class="btn btn-outline btn-sm" id="btnReloadList">🔄 Làm mới</button>
+        </div>
+        <div class="card-body">
+          <div class="table-tools">
+            <input
+              type="text"
+              id="searchOfficerInput"
+              class="input"
+              style="flex:1;height:33px;"
+              placeholder="Tìm nhanh theo Tên nhân viên, Mã NV, Mã bác sĩ..."
+            >
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Mã nhân viên</th>
+                  <th>Tên nhân viên</th>
+                  <th>Mã BS</th>
+                  <th>Khoa / Trạng thái</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="officerTableBody">
+                <tr>
+                  <td colspan="6" style="text-align:center;color:var(--muted);padding:24px;">
+                    Chưa tải dữ liệu. Vui lòng chọn tài khoản đơn vị hoặc nhấn <strong>🔄 Làm mới</strong>.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div id="userLookupResult" class="hidden" style="margin-top:10px;padding:9px 11px;border-radius:8px;border:1px solid var(--border);background:#f8fafc;font-size:12px;"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    (function (root) {
+      'use strict';
+
+      const DEFAULTS_CONFIG = {
+        khoaId: 200,
+        maKhoaTT12: 'K01',
+        phamViChuyenMon: 'Khám bệnh',
+        danTocId: 101,
+        tgDangKyHanhNghe: 1,
+        tuNgay: '2025-12-31T17:00:00.000Z',
+        chucDanhNn: 1,
+        companyId: 1,
+        cmnd: '',
+        userPwd: 'Hmis@2026',
+        userLevel: 4,
+        userType: 0,
+        roleId: 204,
+        signTitleId: 1002,
+        userStatus: 1
+      };
+
+      function toIntOrFallback(val, fallback) {
+        if (val === null || val === undefined || String(val).trim() === '') return fallback;
+        const n = Number(String(val).trim());
+        return Number.isFinite(n) ? Math.trunc(n) : fallback;
+      }
+
+      function escapeHtml(str) {
+        return String(str ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function extractTokenInput(rawInput) {
+        const s = String(rawInput || '').trim();
+        if (!s) return '';
+        const authMatch = s.match(/Authorization:\s*Bearer\s+([A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+)/i);
+        if (authMatch) return authMatch[1];
+        const bareJwt = s.match(/([A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+)/);
+        if (bareJwt) return bareJwt[1];
+        return s.replace(/^Bearer\s+/i, '').trim();
+      }
+
+      function parseJwtPayload(token) {
+        const clean = extractTokenInput(token);
+        const parts = clean.split('.');
+        if (parts.length < 2) return null;
+        try {
+          let base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+          while (base64.length % 4) base64 += '=';
+          const binary = typeof atob === 'function'
+            ? atob(base64)
+            : Buffer.from(base64, 'base64').toString('binary');
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+          const decoded = typeof TextDecoder !== 'undefined'
+            ? new TextDecoder('utf-8').decode(bytes)
+            : Buffer.from(bytes).toString('utf8');
+          return JSON.parse(decoded);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function buildOfficerCreatePayload(params) {
+        const officerName = String(params?.officerName || '').trim();
+        const officerCode = String(params?.officerCode || '').trim();
+        const maBacSiRaw = params?.maBacSi;
+        const maBacSi = (maBacSiRaw !== null && maBacSiRaw !== undefined && String(maBacSiRaw).trim() !== '')
+          ? String(maBacSiRaw).trim()
+          : null;
+        const d = { ...DEFAULTS_CONFIG, ...(params?.defaults || {}) };
+        const cmndCustom = d.cmnd !== null && d.cmnd !== undefined ? String(d.cmnd).trim() : '';
+
+        return {
+          status: 0,
+          company: null,
+          khoa: { id: toIntOrFallback(d.khoaId, 200) },
+          officerType: null,
+          officerCode: officerCode,
+          officerName: officerName,
+          officerName2: null,
+          email: null,
+          phong: null,
+          note: null,
+          chucDanh: null,
+          chucDanhNn: toIntOrFallback(d.chucDanhNn, 1),
+          maBacSi: maBacSi,
+          ngayCapCCHN: null,
+          noiCapCCHN: null,
+          maKhoaTT12: String(d.maKhoaTT12 || 'K01').trim() || 'K01',
+          chuyenKhoaId: null,
+          bacSiHuongDanId: null,
+          hocHam: null,
+          hocVi: null,
+          trinhDo: null,
+          phone: null,
+          otp: 0,
+          diaChi: null,
+          ngaySinh: null,
+          gioiTinh: null,
+          chuKyAnh: null,
+          soBhxh: null,
+          soBhyt: null,
+          idNhanVienL3: null,
+          officerCodeBk: null,
+          truongKhoa: 0,
+          maBsDtdt: null,
+          passDtdt: null,
+          khongPttt: null,
+          nguoiTao: null,
+          ngayTao: null,
+          nguoiCapNhat: null,
+          ngayCapNhat: null,
+          loaiDoiTuong: null,
+          statusDtdt: null,
+          cmnd: cmndCustom || officerCode,
+          loaiGiayKy: null,
+          klKsk: 0,
+          capQuanLy: null,
+          phamViChuyenMon: String(d.phamViChuyenMon || 'Khám bệnh').trim() || 'Khám bệnh',
+          viTriChuyenMon: null,
+          thuaLenh: null,
+          trinhDoCmId: null,
+          danTocId: toIntOrFallback(d.danTocId, 101),
+          kbhyt: 0,
+          soQdPhamViHanhNghe: null,
+          tgDangKyHanhNghe: toIntOrFallback(d.tgDangKyHanhNghe, 1),
+          soQdDvKtPhanCongTh: null,
+          tgLamViecNgay: null,
+          tgLamViecTuan: null,
+          csLamViecKhac: null,
+          csChuyenGiaoKt: null,
+          qdChuyenGiaoKt: null,
+          tuNgay: String(d.tuNgay || '2025-12-31T17:00:00.000Z').trim() || '2025-12-31T17:00:00.000Z',
+          denNgay: null,
+          dmGuiBH: 0,
+          bacSiHopTac: 0,
+          companyId: toIntOrFallback(d.companyId, 1)
+        };
+      }
+
+      function buildAdmUserRegisterPayload(params) {
+        const officerId = toIntOrFallback(params?.officerId, 0);
+        if (officerId <= 0) {
+          throw new Error('Thiếu officer.id hợp lệ từ bước tạo nhân viên');
+        }
+        const officerName = String(params?.officerName || '').trim();
+        const officerCode = String(params?.officerCode || '').trim();
+        const d = { ...DEFAULTS_CONFIG, ...(params?.defaults || {}) };
+        const username = String(params?.username || officerCode).trim();
+        const userPwd = String(d.userPwd || 'Hmis@2026');
+
+        return {
+          id: null,
+          username: username,
+          userPwd: userPwd,
+          officer: { id: officerId },
+          fullName: officerName,
+          userLevel: toIntOrFallback(d.userLevel, 4),
+          userType: toIntOrFallback(d.userType, 0),
+          status: toIntOrFallback(d.userStatus, 1),
+          callOnl: 0,
+          auth2FA: 0,
+          type2fa: null,
+          company: { id: toIntOrFallback(d.companyId, 1) },
+          nhomNguoiDungs: [{ roleId: toIntOrFallback(d.roleId, 204) }],
+          signTitles: [{ id: toIntOrFallback(d.signTitleId, 1002) }],
+          adminRegion: 0
+        };
+      }
+
+      function parseApiResult(resOk, httpStatus, rawText) {
+        let json = null;
+        try {
+          json = rawText ? JSON.parse(rawText) : null;
+        } catch (e) {
+          json = null;
+        }
+        const hasCode = json && typeof json === 'object' && json.code !== undefined && json.code !== null;
+        const codeOk = hasCode ? (json.code === 0 || json.code === 200 || String(json.code) === '0' || String(json.code) === '200') : true;
+        const hasSuccess = json && typeof json === 'object' && typeof json.success === 'boolean';
+        const successOk = hasSuccess ? json.success === true : true;
+        const isSuccess = Boolean(resOk) && Boolean(json) && codeOk && successOk;
+
+        const message =
+          (json && (json.message || json.msg || json.error_description || json.error || json.title || json.detail || json.header?.res_msg)) ||
+          (!resOk ? `HTTP ${httpStatus}` : '') ||
+          (rawText ? String(rawText).slice(0, 250) : 'Không có dữ liệu phản hồi JSON');
+
+        return { isSuccess, json, message };
+      }
+
+      function extractCreatedOfficerId(json) {
+        if (!json || typeof json !== 'object') return null;
+        const candidates = [
+          json?.data?.id,
+          json?.data?.officerId,
+          json?.data?.officer?.id,
+          json?.id,
+          json?.officerId,
+          json?.result?.id,
+          (typeof json?.data === 'number' || typeof json?.data === 'string') ? json.data : null
+        ];
+        for (const val of candidates) {
+          if (val !== null && val !== undefined && String(val).trim() !== '' && /^\d+$/.test(String(val).trim())) {
+            const num = Number(String(val).trim());
+            if (num > 0) return num;
+          }
+        }
+        return null;
+      }
+
+      function parseBatchLines(rawText) {
+        const lines = String(rawText || '').split(/\r?\n/);
+        const rows = [];
+        for (let i = 0; i < lines.length; i++) {
+          const rawLine = lines[i].trim();
+          if (!rawLine) continue;
+
+          let cols;
+          if (rawLine.includes('\t')) cols = rawLine.split('\t');
+          else if (rawLine.includes('|')) cols = rawLine.split('|');
+          else if (rawLine.includes(';')) cols = rawLine.split(';');
+          else cols = rawLine.split(',');
+
+          const officerName = (cols[0] || '').trim();
+          const officerCode = (cols[1] || '').trim();
+          const maBacSi = (cols[2] || '').trim();
+
+          // Bỏ qua dòng tiêu đề nếu copy cả header từ Excel
+          if (rows.length === 0 && /^(tên|ten|officername|họ tên)/i.test(officerName) && /^(mã|ma|officercode|username)/i.test(officerCode)) {
+            continue;
+          }
+
+          const errors = [];
+          if (!officerName) errors.push('Thiếu Tên NV');
+          if (!officerCode) errors.push('Thiếu Mã NV');
+
+          rows.push({
+            lineNumber: i + 1,
+            officerName,
+            officerCode,
+            maBacSi: maBacSi || null,
+            valid: errors.length === 0,
+            error: errors.join(', ')
+          });
+        }
+        return rows;
+      }
+
+      root.NhanVienToolCore = {
+        DEFAULTS_CONFIG,
+        escapeHtml,
+        extractTokenInput,
+        parseJwtPayload,
+        buildOfficerCreatePayload,
+        buildAdmUserRegisterPayload,
+        parseApiResult,
+        extractCreatedOfficerId,
+        parseBatchLines
+      };
+
+      if (typeof document === 'undefined') return;
+
+      // ===== DOM CONTROLLER =====
+      const state = {
+        token: '',
+        jwtPayload: null,
+        parentCompanyName: '',
+        parentFullName: '',
+        mode: 'single', // 'single' | 'batch'
+        isBusy: false,
+        officers: [],
+        lastCreatedOfficer: null // { officerId, officerCode, officerName }
+      };
+
+      const $ = (id) => document.getElementById(id);
+
+      const els = {
+        tokenInput: $('tokenInput'),
+        btnApplyToken: $('btnApplyToken'),
+        btnRefreshOfficers: $('btnRefreshOfficers'),
+        pillTokenStatus: $('pillTokenStatus'),
+        pillUnitName: $('pillUnitName'),
+        pillCsyt: $('pillCsyt'),
+        pillUser: $('pillUser'),
+        pillExp: $('pillExp'),
+
+        tabModeSingle: $('tabModeSingle'),
+        tabModeBatch: $('tabModeBatch'),
+        panelSingle: $('panelSingle'),
+        panelBatch: $('panelBatch'),
+
+        inputOfficerName: $('inputOfficerName'),
+        inputOfficerCode: $('inputOfficerCode'),
+        inputMaBacSi: $('inputMaBacSi'),
+        btnPrefixCsyt: $('btnPrefixCsyt'),
+        previewUsername: $('previewUsername'),
+        previewPwd: $('previewPwd'),
+        previewLevel: $('previewLevel'),
+        previewRole: $('previewRole'),
+        previewSign: $('previewSign'),
+
+        batchTextarea: $('batchTextarea'),
+        batchPreviewWrap: $('batchPreviewWrap'),
+        batchPreviewCount: $('batchPreviewCount'),
+        batchPreviewBody: $('batchPreviewBody'),
+
+        defKhoaId: $('defKhoaId'),
+        defMaKhoaTT12: $('defMaKhoaTT12'),
+        defPhamVi: $('defPhamVi'),
+        defDanTocId: $('defDanTocId'),
+        defTgDk: $('defTgDk'),
+        defTuNgay: $('defTuNgay'),
+        defChucDanhNn: $('defChucDanhNn'),
+        defCompanyId: $('defCompanyId'),
+        defCmnd: $('defCmnd'),
+        defUserPwd: $('defUserPwd'),
+        defUserLevel: $('defUserLevel'),
+        defUserType: $('defUserType'),
+        defRoleId: $('defRoleId'),
+        defSignTitleId: $('defSignTitleId'),
+        defUserStatus: $('defUserStatus'),
+        defaultsSummaryText: $('defaultsSummaryText'),
+        btnResetDefaults: $('btnResetDefaults'),
+        btnInspectUnitMeta: $('btnInspectUnitMeta'),
+        unitMetaBox: $('unitMetaBox'),
+
+        btnExecuteCreate: $('btnExecuteCreate'),
+        btnRetryStep2: $('btnRetryStep2'),
+        btnPreviewPayload: $('btnPreviewPayload'),
+        btnResetForm: $('btnResetForm'),
+
+        pipelineArea: $('pipelineArea'),
+        step1Card: $('step1Card'),
+        step1Badge: $('step1Badge'),
+        step1Msg: $('step1Msg'),
+        step1JsonDetails: $('step1JsonDetails'),
+        step1JsonPre: $('step1JsonPre'),
+        step2Card: $('step2Card'),
+        step2Badge: $('step2Badge'),
+        step2Msg: $('step2Msg'),
+        step2JsonDetails: $('step2JsonDetails'),
+        step2JsonPre: $('step2JsonPre'),
+
+        btnReloadList: $('btnReloadList'),
+        searchOfficerInput: $('searchOfficerInput'),
+        officerCountBadge: $('officerCountBadge'),
+        officerTableBody: $('officerTableBody'),
+        userLookupResult: $('userLookupResult'),
+        toast: $('toast')
+      };
+
+      let toastTimer = null;
+      function showToast(msg, type = 'info') {
+        if (!els.toast) return;
+        els.toast.textContent = msg;
+        els.toast.className = 'show ' + type;
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => { els.toast.className = ''; }, 3600);
+      }
+
+      function readDefaultsFromUI() {
+        return {
+          khoaId: toIntOrFallback(els.defKhoaId.value, 200),
+          maKhoaTT12: els.defMaKhoaTT12.value.trim() || 'K01',
+          phamViChuyenMon: els.defPhamVi.value.trim() || 'Khám bệnh',
+          danTocId: toIntOrFallback(els.defDanTocId.value, 101),
+          tgDangKyHanhNghe: toIntOrFallback(els.defTgDk.value, 1),
+          tuNgay: els.defTuNgay.value.trim() || '2025-12-31T17:00:00.000Z',
+          chucDanhNn: toIntOrFallback(els.defChucDanhNn.value, 1),
+          companyId: toIntOrFallback(els.defCompanyId.value, 1),
+          cmnd: els.defCmnd.value.trim(),
+          userPwd: els.defUserPwd.value || 'Hmis@2026',
+          userLevel: toIntOrFallback(els.defUserLevel.value, 4),
+          userType: toIntOrFallback(els.defUserType.value, 0),
+          roleId: toIntOrFallback(els.defRoleId.value, 204),
+          signTitleId: toIntOrFallback(els.defSignTitleId.value, 1002),
+          userStatus: toIntOrFallback(els.defUserStatus.value, 1)
+        };
+      }
+
+      function applyDefaultsToUI(d = DEFAULTS_CONFIG) {
+        els.defKhoaId.value = d.khoaId;
+        els.defMaKhoaTT12.value = d.maKhoaTT12;
+        els.defPhamVi.value = d.phamViChuyenMon;
+        els.defDanTocId.value = d.danTocId;
+        els.defTgDk.value = d.tgDangKyHanhNghe;
+        els.defTuNgay.value = d.tuNgay;
+        els.defChucDanhNn.value = d.chucDanhNn;
+        els.defCompanyId.value = d.companyId;
+        els.defCmnd.value = d.cmnd || '';
+        els.defUserPwd.value = d.userPwd;
+        els.defUserLevel.value = d.userLevel;
+        els.defUserType.value = d.userType;
+        els.defRoleId.value = d.roleId;
+        els.defSignTitleId.value = d.signTitleId;
+        els.defUserStatus.value = d.userStatus;
+        updateAccountPreview();
+      }
+
+      function updateAccountPreview() {
+        const code = els.inputOfficerCode.value.trim();
+        const d = readDefaultsFromUI();
+        els.previewUsername.textContent = code || '(theo Mã nhân viên)';
+        els.previewPwd.textContent = d.userPwd;
+        els.previewLevel.textContent = d.userLevel;
+        els.previewRole.textContent = d.roleId;
+        els.previewSign.textContent = d.signTitleId;
+        els.defaultsSummaryText.textContent = `Khoa: ${d.khoaId} · TT12: ${d.maKhoaTT12} · Role: ${d.roleId} · Title: ${d.signTitleId}`;
+      }
+
+      function updateUnitPills() {
+        const jwt = state.jwtPayload;
+        if (!state.token) {
+          els.pillTokenStatus.className = 'pill warn';
+          els.pillTokenStatus.textContent = 'Chưa có Token';
+          els.pillUnitName.classList.add('hidden');
+          els.pillCsyt.classList.add('hidden');
+          els.pillUser.classList.add('hidden');
+          els.pillExp.classList.add('hidden');
+          els.btnPrefixCsyt.classList.add('hidden');
+          return;
+        }
+
+        const isExpired = jwt?.exp ? (jwt.exp * 1000 < Date.now()) : false;
+        els.pillTokenStatus.className = isExpired ? 'pill err' : 'pill ok';
+        els.pillTokenStatus.textContent = isExpired ? '⚠️ Token đã hết hạn' : '✅ Token sẵn sàng';
+
+        if (state.parentCompanyName) {
+          els.pillUnitName.className = 'pill purple';
+          els.pillUnitName.textContent = `🏥 ${state.parentCompanyName}`;
+        } else {
+          els.pillUnitName.classList.add('hidden');
+        }
+
+        const maCsyt = jwt?.MA_CSYT || jwt?.HOSPITAL_CODE || '';
+        if (maCsyt) {
+          els.pillCsyt.className = 'pill';
+          els.pillCsyt.textContent = `CSYT: ${maCsyt}` + (jwt?.DONVI_ID ? ` (ID: ${jwt.DONVI_ID})` : '');
+          els.btnPrefixCsyt.classList.remove('hidden');
+          els.btnPrefixCsyt.textContent = `+ ${maCsyt}.`;
+          els.btnPrefixCsyt.dataset.prefix = maCsyt + '.';
+        } else {
+          els.pillCsyt.classList.add('hidden');
+          els.btnPrefixCsyt.classList.add('hidden');
+        }
+
+        if (jwt?.sub) {
+          els.pillUser.className = 'pill';
+          els.pillUser.textContent = `User: ${jwt.sub}`;
+        } else {
+          els.pillUser.classList.add('hidden');
+        }
+
+        if (jwt?.exp) {
+          const expDate = new Date(jwt.exp * 1000);
+          els.pillExp.className = isExpired ? 'pill err' : 'pill';
+          els.pillExp.textContent = `Hết hạn: ${expDate.toLocaleTimeString('vi-VN')}`;
+        } else {
+          els.pillExp.classList.add('hidden');
+        }
+      }
+
+      function setToken(rawToken, meta = {}) {
+        const clean = extractTokenInput(rawToken);
+        const tokenChanged = clean !== state.token;
+        state.token = clean;
+        state.jwtPayload = clean ? parseJwtPayload(clean) : null;
+        if (meta.companyName !== undefined) state.parentCompanyName = meta.companyName || '';
+        if (meta.fullName !== undefined) state.parentFullName = meta.fullName || '';
+        els.tokenInput.value = clean;
+
+        if (tokenChanged) {
+          state.lastCreatedOfficer = null;
+          els.btnRetryStep2.classList.add('hidden');
+          els.unitMetaBox.classList.add('hidden');
+          els.userLookupResult.classList.add('hidden');
+        }
+
+        updateUnitPills();
+        if (clean && tokenChanged) {
+          loadOfficersList(true);
+        }
+      }
+
+      function getAuthHeaders(extra = {}) {
+        if (!state.token) {
+          throw new Error('Chưa có Token đăng nhập đơn vị! Vui lòng đăng nhập hoặc dán Bearer Token.');
+        }
+        return {
+          'Accept': 'application/json, text/plain, */*',
+          'Accept-Language': 'vi',
+          'Authorization': `Bearer ${state.token}`,
+          'Content-Type': 'application/json; charset=UTF-8',
+          'X-Screen-Path': '/quanly-nhanvien',
+          ...extra
+        };
+      }
+
+      async function apiPostJson(url, payload) {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: getAuthHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const rawText = await res.text();
+        const parsed = parseApiResult(res.ok, res.status, rawText);
+        return { httpStatus: res.status, rawText, ...parsed };
+      }
+
+      async function apiGetJson(url) {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: getAuthHeaders()
+        });
+        const rawText = await res.text();
+        const parsed = parseApiResult(res.ok, res.status, rawText);
+        return { httpStatus: res.status, rawText, ...parsed };
+      }
+
+      function setStepUI(stepNum, status, badgeText, msgHtml, jsonObj = null) {
+        const card = stepNum === 1 ? els.step1Card : els.step2Card;
+        const badge = stepNum === 1 ? els.step1Badge : els.step2Badge;
+        const msg = stepNum === 1 ? els.step1Msg : els.step2Msg;
+        const details = stepNum === 1 ? els.step1JsonDetails : els.step2JsonDetails;
+        const pre = stepNum === 1 ? els.step1JsonPre : els.step2JsonPre;
+
+        card.className = 'step-card' + (status ? ' ' + status : '');
+        badge.className = 'badge ' + (
+          status === 'success' ? 'badge-ok' :
+          status === 'error' ? 'badge-err' :
+          status === 'running' ? 'badge-info' : 'badge-muted'
+        );
+        badge.textContent = badgeText;
+        msg.innerHTML = msgHtml;
+
+        if (jsonObj !== null && jsonObj !== undefined) {
+          details.classList.remove('hidden');
+          pre.textContent = typeof jsonObj === 'string' ? jsonObj : JSON.stringify(jsonObj, null, 2);
+        } else {
+          details.classList.add('hidden');
+          pre.textContent = '';
+        }
+      }
+
+      async function createOfficerAndUserOne({ officerName, officerCode, maBacSi, defaults, existingOfficerId = null, onStep1Done = null }) {
+        let officerId = existingOfficerId;
+        let step1Result = null;
+        const officerPayload = buildOfficerCreatePayload({ officerName, officerCode, maBacSi, defaults });
+
+        if (!officerId) {
+          step1Result = await apiPostJson('/api/common/officer/create', officerPayload);
+          if (!step1Result.isSuccess) {
+            return { ok: false, failedStep: 1, officerPayload, step1Result };
+          }
+          officerId = extractCreatedOfficerId(step1Result.json);
+          if (!officerId) {
+            return {
+              ok: false,
+              failedStep: 1,
+              officerPayload,
+              step1Result: {
+                ...step1Result,
+                isSuccess: false,
+                message: 'API tạo nhân viên thành công nhưng không tìm thấy officer.id trong response!'
+              }
+            };
+          }
+          if (typeof onStep1Done === 'function') {
+            onStep1Done({ officerId, officerPayload, step1Result });
+          }
+        }
+
+        const admUserPayload = buildAdmUserRegisterPayload({
+          officerId,
+          officerCode,
+          officerName,
+          defaults
+        });
+        const step2Result = await apiPostJson('/api/common/admuser/dangky', admUserPayload);
+        if (!step2Result.isSuccess) {
+          return {
+            ok: false,
+            failedStep: 2,
+            officerId,
+            officerPayload,
+            step1Result,
+            admUserPayload,
+            step2Result
+          };
+        }
+
+        return {
+          ok: true,
+          officerId,
+          officerPayload,
+          step1Result,
+          admUserPayload,
+          step2Result
+        };
+      }
+
+      function setBusy(flag) {
+        state.isBusy = flag;
+        els.btnExecuteCreate.disabled = flag;
+        els.btnRetryStep2.disabled = flag;
+        els.btnPreviewPayload.disabled = flag;
+      }
+
+      async function handleSingleCreate(onlyRetryStep2 = false) {
+        if (state.isBusy) return;
+        const officerName = els.inputOfficerName.value.trim();
+        const officerCode = els.inputOfficerCode.value.trim();
+        const maBacSi = els.inputMaBacSi.value.trim();
+        const defaults = readDefaultsFromUI();
+
+        if (!state.token) {
+          showToast('Chưa có Bearer Token của đơn vị!', 'error');
+          els.tokenInput.focus();
+          return;
+        }
+        if (!officerName) {
+          showToast('Vui lòng nhập Tên nhân viên!', 'error');
+          els.inputOfficerName.focus();
+          return;
+        }
+        if (!officerCode) {
+          showToast('Vui lòng nhập Mã nhân viên!', 'error');
+          els.inputOfficerCode.focus();
+          return;
+        }
+
+        els.pipelineArea.classList.remove('hidden');
+        setBusy(true);
+
+        try {
+          const existingOfficerId = (onlyRetryStep2 && state.lastCreatedOfficer?.officerId)
+            ? state.lastCreatedOfficer.officerId
+            : null;
+
+          if (existingOfficerId) {
+            setStepUI(1, 'success', `Đã có ID #${existingOfficerId}`,
+              `Dùng lại nhân viên đã tạo ở Bước 1 (<code>officer.id = ${existingOfficerId}</code>).`);
+            setStepUI(2, 'running', 'Đang gọi...',
+              `Đang đăng ký tài khoản <code>${escapeHtml(officerCode)}</code> (<code>officer.id = ${existingOfficerId}</code>)...`);
+          } else {
+            state.lastCreatedOfficer = null;
+            els.btnRetryStep2.classList.add('hidden');
+            setStepUI(1, 'running', 'Đang gọi...', 'Đang gửi request tạo nhân viên tới <code>/api/common/officer/create</code>...');
+            setStepUI(2, '', 'Chờ Bước 1', 'Đang đợi response <code>officer.id</code> từ Bước 1...');
+          }
+
+          const res = await createOfficerAndUserOne({
+            officerName,
+            officerCode,
+            maBacSi,
+            defaults,
+            existingOfficerId,
+            onStep1Done: ({ officerId, officerPayload, step1Result }) => {
+              state.lastCreatedOfficer = { officerId, officerCode, officerName };
+              setStepUI(1, 'success', `OK (ID #${officerId})`,
+                `Tạo nhân viên thành công: <strong>${escapeHtml(officerName)}</strong> (<code>${escapeHtml(officerCode)}</code>) ➔ <code>officer.id = ${officerId}</code>`,
+                { request: officerPayload, response: step1Result.json });
+              setStepUI(2, 'running', 'Đang gọi...',
+                `Đang đăng ký tài khoản <code>${escapeHtml(officerCode)}</code> (<code>officer.id = ${officerId}</code>)...`);
+            }
+          });
+
+          if (!res.ok) {
+            if (res.failedStep === 1) {
+              const s1 = res.step1Result || {};
+              setStepUI(1, 'error', `Lỗi (${s1.httpStatus || 'ERR'})`,
+                `<strong>Tạo nhân viên thất bại:</strong> ${escapeHtml(s1.message || 'Lỗi không xác định')}`,
+                { request: res.officerPayload, response: s1.json || s1.rawText });
+              setStepUI(2, '', 'Đã dừng', 'Không gọi Bước 2 vì Bước 1 chưa thành công.');
+              showToast('Bước 1 thất bại: ' + (s1.message || ''), 'error');
+              return;
+            }
+            const s2 = res.step2Result || {};
+            els.btnRetryStep2.classList.remove('hidden');
+            els.btnRetryStep2.textContent = `🔄 Chỉ chạy lại Bước 2 (officer.id = ${res.officerId})`;
+            setStepUI(2, 'error', `Lỗi (${s2.httpStatus || 'ERR'})`,
+              `<strong>Đăng ký tài khoản thất bại:</strong> ${escapeHtml(s2.message || 'Lỗi không xác định')}<br><span class="hint">Nhân viên #${res.officerId} đã được tạo ở Bước 1 — hãy sửa thông tin (vd: Mã NV / username bị trùng) và bấm nút "Chỉ chạy lại Bước 2" nếu cần.</span>`,
+              { request: res.admUserPayload, response: s2.json || s2.rawText });
+            showToast('Bước 2 thất bại: ' + (s2.message || ''), 'error');
+            loadOfficersList(true);
+            return;
+          }
+
+          els.btnRetryStep2.classList.add('hidden');
+          state.lastCreatedOfficer = null;
+          setStepUI(2, 'success', 'Hoàn tất',
+            `Tạo tài khoản thành công! Username: <code>${escapeHtml(res.admUserPayload.username)}</code> | Mật khẩu: <code>${escapeHtml(res.admUserPayload.userPwd)}</code>`,
+            { request: res.admUserPayload, response: res.step2Result.json });
+          showToast(`Tạo thành công NV & TK ${officerCode} (ID #${res.officerId})!`, 'success');
+          loadOfficersList(true);
+        } catch (err) {
+          showToast(err.message || 'Lỗi kết nối', 'error');
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      async function handleBatchCreate() {
+        if (state.isBusy) return;
+        const rows = parseBatchLines(els.batchTextarea.value);
+        if (!state.token) {
+          showToast('Chưa có Bearer Token của đơn vị!', 'error');
+          return;
+        }
+        if (rows.length === 0) {
+          showToast('Vui lòng nhập ít nhất 1 dòng nhân viên!', 'error');
+          return;
+        }
+        const invalidRows = rows.filter(r => !r.valid);
+        if (invalidRows.length > 0) {
+          showToast(`Có ${invalidRows.length} dòng chưa đủ Tên NV / Mã NV!`, 'error');
+          return;
+        }
+
+        const defaults = readDefaultsFromUI();
+        setBusy(true);
+        els.pipelineArea.classList.remove('hidden');
+        els.btnRetryStep2.classList.add('hidden');
+        setStepUI(1, 'running', `0/${rows.length}`, 'Đang chạy tạo hàng loạt...');
+        setStepUI(2, 'running', 'Chờ từng dòng', 'Kết quả từng dòng hiển thị ở bảng xem trước phía trên.');
+
+        let okCount = 0;
+        let errCount = 0;
+        const logs = [];
+
+        try {
+          for (let i = 0; i < rows.length; i++) {
+            const r = rows[i];
+            const statusCell = document.getElementById(`batch-status-${i}`);
+            if (statusCell) statusCell.innerHTML = '<span class="badge badge-info">Đang tạo...</span>';
+
+            const res = await createOfficerAndUserOne({
+              officerName: r.officerName,
+              officerCode: r.officerCode,
+              maBacSi: r.maBacSi,
+              defaults
+            });
+
+            if (res.ok) {
+              okCount++;
+              if (statusCell) statusCell.innerHTML = `<span class="badge badge-ok">OK (ID #${res.officerId})</span>`;
+              logs.push({ row: i + 1, officerCode: r.officerCode, ok: true, officerId: res.officerId });
+            } else {
+              errCount++;
+              const errMsg = res.failedStep === 1 ? (res.step1Result?.message || 'Lỗi Bước 1') : `NV #${res.officerId} OK, lỗi TK: ${res.step2Result?.message || 'Lỗi Bước 2'}`;
+              if (statusCell) statusCell.innerHTML = `<span class="badge badge-err" title="${escapeHtml(errMsg)}">${escapeHtml(errMsg)}</span>`;
+              logs.push({ row: i + 1, officerCode: r.officerCode, ok: false, failedStep: res.failedStep, officerId: res.officerId || null, error: errMsg });
+            }
+            setStepUI(1, 'running', `${i + 1}/${rows.length}`, `Đã xử lý ${i + 1}/${rows.length} dòng (Thành công: ${okCount}, Lỗi: ${errCount})`);
+          }
+
+          const finalStatus = errCount === 0 ? 'success' : (okCount > 0 ? 'running' : 'error');
+          setStepUI(1, finalStatus, `Xong ${okCount}/${rows.length}`,
+            `Hoàn tất tạo hàng loạt: <strong>${okCount}</strong> thành công, <strong>${errCount}</strong> lỗi.`, logs);
+          setStepUI(2, finalStatus, errCount === 0 ? '100% OK' : `${errCount} lỗi`,
+            `Chi tiết xem tại cột Trạng thái bảng trên hoặc JSON log ở Bước 1.`);
+          showToast(`Hàng loạt xong: ${okCount} thành công, ${errCount} lỗi.`, errCount === 0 ? 'success' : 'warning');
+          loadOfficersList(true);
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      function handlePreviewPayload() {
+        const defaults = readDefaultsFromUI();
+        els.pipelineArea.classList.remove('hidden');
+
+        if (state.mode === 'batch') {
+          const rows = parseBatchLines(els.batchTextarea.value);
+          if (rows.length === 0) {
+            showToast('Chưa có dữ liệu dòng nào để xem thử payload.', 'warning');
+            return;
+          }
+          const sample = rows[0];
+          const p1 = buildOfficerCreatePayload({ officerName: sample.officerName, officerCode: sample.officerCode, maBacSi: sample.maBacSi, defaults });
+          const p2 = buildAdmUserRegisterPayload({ officerId: 99999, officerCode: sample.officerCode, officerName: sample.officerName, defaults });
+          setStepUI(1, '', 'Dry-Run (Dòng 1)', `Xem trước Payload Bước 1 cho <code>${escapeHtml(sample.officerCode)}</code> (chưa gửi lên server).`, p1);
+          setStepUI(2, '', 'Dry-Run (Mẫu ID)', `Xem trước Payload Bước 2 (<code>officer.id</code> sẽ lấy từ phản hồi Bước 1).`, p2);
+          els.step1JsonDetails.open = true;
+          els.step2JsonDetails.open = true;
+          return;
+        }
+
+        const officerName = els.inputOfficerName.value.trim() || 'ĐIỂM TRẠM Y TẾ TÍCH LƯƠNG 3';
+        const officerCode = els.inputOfficerCode.value.trim() || '19112.dttichluong3';
+        const maBacSi = els.inputMaBacSi.value.trim();
+
+        const p1 = buildOfficerCreatePayload({ officerName, officerCode, maBacSi, defaults });
+        const sampleOfficerId = state.lastCreatedOfficer?.officerId || 260;
+        const p2 = buildAdmUserRegisterPayload({ officerId: sampleOfficerId, officerCode, officerName, defaults });
+
+        setStepUI(1, '', 'Dry-Run', 'Payload sẽ gửi tới <code>POST /api/common/officer/create</code> (chưa gọi API thật).', p1);
+        setStepUI(2, '', 'Dry-Run', `Payload sẽ gửi tới <code>POST /api/common/admuser/dangky</code> (<code>officer.id</code> mẫu: <code>${sampleOfficerId}</code>).`, p2);
+        els.step1JsonDetails.open = true;
+        els.step2JsonDetails.open = true;
+      }
+
+      function renderBatchPreview() {
+        const rows = parseBatchLines(els.batchTextarea.value);
+        if (rows.length === 0) {
+          els.batchPreviewWrap.classList.add('hidden');
+          return;
+        }
+        els.batchPreviewWrap.classList.remove('hidden');
+        const validCount = rows.filter(r => r.valid).length;
+        els.batchPreviewCount.textContent = `${validCount}/${rows.length} dòng hợp lệ`;
+        els.batchPreviewBody.innerHTML = rows.map((r, idx) => `
+          <tr>
+            <td>${idx + 1}</td>
+            <td>${escapeHtml(r.officerName)}</td>
+            <td class="mono">${escapeHtml(r.officerCode)}</td>
+            <td class="mono">${r.maBacSi ? escapeHtml(r.maBacSi) : '<span style="color:var(--muted)">null</span>'}</td>
+            <td id="batch-status-${idx}">${r.valid ? '<span class="badge badge-muted">Sẵn sàng</span>' : `<span class="badge badge-err">${escapeHtml(r.error)}</span>`}</td>
+          </tr>
+        `).join('');
+      }
+
+      function renderOfficersTable() {
+        const q = els.searchOfficerInput.value.trim().toLowerCase();
+        const filtered = state.officers.filter(o => {
+          if (!q) return true;
+          return (
+            String(o.officerName || '').toLowerCase().includes(q) ||
+            String(o.officerCode || '').toLowerCase().includes(q) ||
+            String(o.maBacSi || '').toLowerCase().includes(q) ||
+            String(o.id || '').includes(q)
+          );
+        });
+        els.officerCountBadge.textContent = String(filtered.length);
+
+        if (filtered.length === 0) {
+          els.officerTableBody.innerHTML = `
+            <tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">Không tìm thấy nhân viên phù hợp.</td></tr>
+          `;
+          return;
+        }
+
+        els.officerTableBody.innerHTML = filtered.slice(0, 200).map(o => {
+          const khoaLabel = o.khoa?.name || (o.khoa?.id ? `Khoa #${o.khoa.id}` : '—');
+          const statusBadge = o.status === 1
+            ? '<span class="badge badge-err">Khóa (1)</span>'
+            : '<span class="badge badge-ok">Hoạt động (0)</span>';
+          return `
+            <tr>
+              <td class="mono">${escapeHtml(o.id)}</td>
+              <td class="mono"><strong>${escapeHtml(o.officerCode || '')}</strong></td>
+              <td>${escapeHtml(o.officerName || '')}</td>
+              <td class="mono">${o.maBacSi ? escapeHtml(o.maBacSi) : '<span style="color:var(--muted)">—</span>'}</td>
+              <td><div style="font-size:11px;color:#475569;">${escapeHtml(khoaLabel)}</div>${statusBadge}</td>
+              <td style="white-space:nowrap;">
+                <button type="button" class="btn btn-outline btn-sm btn-check-user" data-id="${escapeHtml(o.id)}" data-code="${escapeHtml(o.officerCode || '')}" data-name="${escapeHtml(o.officerName || '')}" title="Kiểm tra tài khoản đăng nhập liên kết với nhân viên này">🔍 Check TK</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      async function loadOfficersList(silent = false) {
+        if (!state.token) {
+          if (!silent) showToast('Vui lòng chọn đơn vị hoặc nhập Token trước!', 'warning');
+          return;
+        }
+        els.btnReloadList.disabled = true;
+        els.btnRefreshOfficers.disabled = true;
+        try {
+          const url = '/api/common/officer/search?filter=id!=0&page=0&size=200&sort=id&sort=desc';
+          const res = await apiGetJson(url);
+          if (!res.isSuccess) {
+            if (!silent) showToast('Lỗi tải DS nhân viên: ' + res.message, 'error');
+            els.officerTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--danger);padding:18px;">Lỗi: ${escapeHtml(res.message)}</td></tr>`;
+            return;
+          }
+          const list = res.json?.data?.content || res.json?.data || res.json?.content || [];
+          state.officers = Array.isArray(list) ? list : [];
+          renderOfficersTable();
+        } catch (err) {
+          if (!silent) showToast('Lỗi tải danh sách: ' + err.message, 'error');
+        } finally {
+          els.btnReloadList.disabled = false;
+          els.btnRefreshOfficers.disabled = false;
+        }
+      }
+
+      async function checkLinkedUser(officerId, officerCode, officerName) {
+        if (!state.token || !officerId) return;
+        els.userLookupResult.classList.remove('hidden');
+        els.userLookupResult.innerHTML = `Đang kiểm tra tài khoản của <strong>${escapeHtml(officerName)}</strong> (<code>officer.id = ${escapeHtml(officerId)}</code>)...`;
+        try {
+          const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=20&sort=id&sort=desc`);
+          if (!res.isSuccess) {
+            els.userLookupResult.innerHTML = `<span style="color:var(--danger)">Lỗi kiểm tra tài khoản: ${escapeHtml(res.message)}</span>`;
+            return;
+          }
+          const users = res.json?.data?.content || res.json?.data || res.json?.content || [];
+          if (!Array.isArray(users) || users.length === 0) {
+            els.userLookupResult.innerHTML = `
+              ⚠️ Nhân viên <strong>${escapeHtml(officerName)}</strong> (ID #${escapeHtml(officerId)}) <strong>chưa có tài khoản</strong>.
+              <button type="button" class="btn btn-purple-soft btn-sm" style="margin-left:8px;height:24px;" id="btnQuickAttachUser">⚡ Tạo tài khoản cho NV #${escapeHtml(officerId)}</button>
+            `;
+            const attachBtn = document.getElementById('btnQuickAttachUser');
+            if (attachBtn) {
+              attachBtn.addEventListener('click', () => {
+                setMode('single');
+                els.inputOfficerName.value = officerName;
+                els.inputOfficerCode.value = officerCode;
+                state.lastCreatedOfficer = { officerId: Number(officerId), officerCode, officerName };
+                els.btnRetryStep2.classList.remove('hidden');
+                els.btnRetryStep2.textContent = `🔄 Chỉ chạy lại Bước 2 (officer.id = ${officerId})`;
+                updateAccountPreview();
+                showToast(`Đã nạp NV #${officerId}. Bấm "Chỉ chạy lại Bước 2" để tạo TK!`, 'info');
+              });
+            }
+          } else {
+            const summary = users.map(u => `<code>${escapeHtml(u.username)}</code> (ID: ${escapeHtml(u.id)}, Level: ${escapeHtml(u.userLevel)}, Status: ${escapeHtml(u.status)})`).join(' ; ');
+            els.userLookupResult.innerHTML = `✅ Nhân viên <strong>${escapeHtml(officerName)}</strong> (ID #${escapeHtml(officerId)}) đã có tài khoản: ${summary}`;
+          }
+        } catch (err) {
+          els.userLookupResult.innerHTML = `<span style="color:var(--danger)">Lỗi: ${escapeHtml(err.message)}</span>`;
+        }
+      }
+
+      async function inspectUnitMetadata() {
+        if (!state.token) {
+          showToast('Vui lòng nhập Token trước!', 'warning');
+          return;
+        }
+        const companyId = toIntOrFallback(els.defCompanyId.value, 1);
+        els.unitMetaBox.classList.remove('hidden');
+        els.unitMetaBox.innerHTML = 'Đang kiểm tra Khoa, Nhóm quyền và Chức danh từ server...';
+        try {
+          const [khoaRes, roleRes, signRes] = await Promise.all([
+            apiGetJson(`/api/common/organization/khoa?companyId=${companyId}`),
+            apiGetJson('/api/common/role/search?filter=roleId!=0&page=0&size=100&sort=roleId&sort=desc'),
+            apiGetJson('/api/common/dmcsigntitle/search?filter=id!=0&page=0&size=100&sort=id&sort=desc')
+          ]);
+
+          const khoas = Array.isArray(khoaRes.json?.data) ? khoaRes.json.data : [];
+          const roles = Array.isArray(roleRes.json?.data?.content || roleRes.json?.data)
+            ? (roleRes.json?.data?.content || roleRes.json?.data)
+            : [];
+          const signs = Array.isArray(signRes.json?.data?.content || signRes.json?.data)
+            ? (signRes.json?.data?.content || signRes.json?.data)
+            : [];
+
+          els.unitMetaBox.innerHTML = `
+            <div><strong>Khoa (${khoas.length}):</strong> ${khoas.slice(0, 8).map(k => `<code>${escapeHtml(k.id)}</code>: ${escapeHtml(k.name)}`).join(' | ') || '—'}</div>
+            <div style="margin-top:4px;"><strong>Nhóm quyền mẫu:</strong> ${roles.slice(0, 6).map(r => `<code>${escapeHtml(r.roleId || r.id)}</code>: ${escapeHtml(r.roleName || r.roleCode)}`).join(' | ') || '—'}</div>
+            <div style="margin-top:4px;"><strong>Chức danh mẫu:</strong> ${signs.slice(0, 6).map(s => `<code>${escapeHtml(s.id)}</code>: ${escapeHtml(s.titleName || s.titleCode)}`).join(' | ') || '—'}</div>
+          `;
+        } catch (err) {
+          els.unitMetaBox.innerHTML = `<span style="color:var(--danger)">Lỗi kiểm tra: ${escapeHtml(err.message)}</span>`;
+        }
+      }
+
+      function setMode(mode) {
+        state.mode = mode === 'batch' ? 'batch' : 'single';
+        els.tabModeSingle.classList.toggle('active', state.mode === 'single');
+        els.tabModeBatch.classList.toggle('active', state.mode === 'batch');
+        els.panelSingle.classList.toggle('hidden', state.mode !== 'single');
+        els.panelBatch.classList.toggle('hidden', state.mode !== 'batch');
+        els.btnExecuteCreate.textContent = state.mode === 'batch'
+          ? '⚡ Chạy Tạo Hàng Loạt (Bước 1 ➔ Bước 2)'
+          : '⚡ Tạo Nhân Viên & Người Dùng';
+        if (state.mode === 'batch') els.btnRetryStep2.classList.add('hidden');
+      }
+
+      // ===== EVENTS =====
+      els.btnApplyToken.addEventListener('click', () => {
+        const raw = els.tokenInput.value;
+        const clean = extractTokenInput(raw);
+        if (!clean) {
+          showToast('Vui lòng nhập Bearer Token!', 'warning');
+          return;
+        }
+        setToken(clean, { companyName: '', fullName: '' });
+        showToast('Đã áp dụng Token mới!', 'success');
+      });
+
+      els.btnRefreshOfficers.addEventListener('click', () => loadOfficersList(false));
+      els.btnReloadList.addEventListener('click', () => loadOfficersList(false));
+      els.searchOfficerInput.addEventListener('input', renderOfficersTable);
+
+      els.tabModeSingle.addEventListener('click', () => setMode('single'));
+      els.tabModeBatch.addEventListener('click', () => setMode('batch'));
+
+      els.inputOfficerCode.addEventListener('input', updateAccountPreview);
+      els.batchTextarea.addEventListener('input', renderBatchPreview);
+
+      [
+        els.defKhoaId, els.defMaKhoaTT12, els.defUserPwd,
+        els.defUserLevel, els.defRoleId, els.defSignTitleId
+      ].forEach(el => el.addEventListener('input', updateAccountPreview));
+
+      els.btnPrefixCsyt.addEventListener('click', () => {
+        const prefix = els.btnPrefixCsyt.dataset.prefix || '';
+        const cur = els.inputOfficerCode.value.trim();
+        if (prefix && !cur.startsWith(prefix)) {
+          els.inputOfficerCode.value = prefix + cur;
+          updateAccountPreview();
+        }
+        els.inputOfficerCode.focus();
+      });
+
+      els.btnResetDefaults.addEventListener('click', () => {
+        applyDefaultsToUI(DEFAULTS_CONFIG);
+        showToast('Đã khôi phục thông số mặc định theo API chuẩn.', 'info');
+      });
+
+      els.btnInspectUnitMeta.addEventListener('click', inspectUnitMetadata);
+
+      els.btnExecuteCreate.addEventListener('click', () => {
+        if (state.mode === 'batch') handleBatchCreate();
+        else handleSingleCreate(false);
+      });
+
+      els.btnRetryStep2.addEventListener('click', () => handleSingleCreate(true));
+      els.btnPreviewPayload.addEventListener('click', handlePreviewPayload);
+
+      els.btnResetForm.addEventListener('click', () => {
+        els.inputOfficerName.value = '';
+        els.inputOfficerCode.value = '';
+        els.inputMaBacSi.value = '';
+        state.lastCreatedOfficer = null;
+        els.btnRetryStep2.classList.add('hidden');
+        els.pipelineArea.classList.add('hidden');
+        updateAccountPreview();
+        els.inputOfficerName.focus();
+      });
+
+      els.officerTableBody.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-check-user');
+        if (!btn) return;
+        checkLinkedUser(btn.dataset.id, btn.dataset.code, btn.dataset.name);
+      });
+
+      // Đồng bộ token từ parent frame hoặc query param ?token=
+      window.addEventListener('message', (event) => {
+        if (!event.data || typeof event.data !== 'object') return;
+        if (event.data.type === 'SET_TOKEN' && event.data.token) {
+          setToken(event.data.token, {
+            companyName: event.data.companyName || '',
+            fullName: event.data.fullName || ''
+          });
+          showToast('Đã đồng bộ Token đơn vị mới!', 'info');
+        }
+      });
+
+      (function initFromQuery() {
+        applyDefaultsToUI(DEFAULTS_CONFIG);
+        const params = new URLSearchParams(window.location.search);
+        const qToken = params.get('token');
+        const qUnit = params.get('unit') || '';
+        if (qToken) {
+          setToken(qToken, { companyName: qUnit });
+        } else {
+          updateUnitPills();
+        }
+      })();
+    })(typeof window !== 'undefined' ? window : globalThis);
+  </script>
+</body>
+</html>
