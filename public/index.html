@@ -2433,6 +2433,77 @@
     });
 
     // --- QUẢN LÝ ĐA TAB (IN-APP TABS) ---
+    function getModuleNameByRoute(route) {
+      if (!route) return '';
+      const cleanR = route.split('?')[0].split('#')[0];
+
+      // 1. Tool routes đặc biệt
+      if (cleanR.includes('lien-thong')) return 'Cấu hình Liên thông';
+      if (cleanR.includes('excel')) return 'Xuất Excel Danh mục DV';
+      if (cleanR.includes('canh-bao')) return 'Cảnh Báo Đơn Vị';
+      if (cleanR.includes('tao-nhan-vien')) return 'Tạo nhanh NV & TK';
+      if (cleanR === '/new/his/chon-khoaphong') return 'Chọn khoa phòng';
+      if (cleanR === '/new/his/dang-nhap') return 'Login gốc';
+
+      // 2. Tìm trong customModulesList nếu có
+      if (typeof customModulesList !== 'undefined' && Array.isArray(customModulesList)) {
+        let found = customModulesList.find(m => m.route === cleanR);
+        if (!found) {
+          const matches = customModulesList.filter(m => m.route && (cleanR.startsWith(m.route) || m.route.startsWith(cleanR)));
+          if (matches.length > 0) {
+            matches.sort((a, b) => b.route.length - a.route.length);
+            found = matches[0];
+          }
+        }
+        if (found && found.name) {
+          return found.name.replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim();
+        }
+      }
+
+      // 3. Tìm trong dropdown quickRouteSelect options
+      if (typeof quickRouteSelect !== 'undefined' && quickRouteSelect && quickRouteSelect.options) {
+        const opt = Array.from(quickRouteSelect.options).find(o => o.value && o.value !== '__manage_modules__' && (cleanR === o.value || cleanR.startsWith(o.value)));
+        if (opt && opt.text) {
+          return opt.text.replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim();
+        }
+      }
+
+      // 4. Các route phổ biến thường gặp của VNPT HIS
+      if (cleanR.includes('/ngoaitru/kb') || cleanR.includes('/ds-khambenh')) return 'Khám Ngoại trú';
+      if (cleanR.includes('/ngoaitru/tnkb') || cleanR.includes('/tiepnhan')) return 'Tiếp nhận ngoại trú';
+      if (cleanR.includes('/duoc/duyet-phat-thuoc')) return 'Duyệt phát thuốc';
+      if (cleanR.includes('/duoc/quan-ly-duoc') || cleanR.includes('/ton-kho')) return 'Tra cứu tồn kho';
+      if (cleanR.includes('/vien-phi')) return 'Quản lý Viện phí';
+      if (cleanR.includes('/noitru')) return 'Điều trị Nội trú';
+      if (cleanR.includes('/cls') || cleanR.includes('/canlamsang')) return 'Cận lâm sàng';
+
+      return '';
+    }
+
+    function updateTabTypeAndTitle(tab, newRoute, explicitName) {
+      if (!tab || !newRoute) return;
+      tab.route = newRoute;
+
+      // Cập nhật type tương ứng để đồng bộ tabIcon
+      if (newRoute.includes('canh-bao')) {
+        tab.type = 'canh-bao';
+      } else if (newRoute.includes('lien-thong')) {
+        tab.type = 'ksk';
+      } else if (newRoute.includes('excel')) {
+        tab.type = 'excel';
+      } else if (newRoute.includes('tao-nhan-vien')) {
+        tab.type = 'nhan-vien';
+      } else {
+        tab.type = 'his';
+      }
+
+      // Cập nhật title của tab theo tên phân hệ
+      const modName = explicitName || getModuleNameByRoute(newRoute);
+      if (modName) {
+        tab.title = modName;
+      }
+    }
+
     function renderTabsBar() {
       tabsList.innerHTML = '';
       tabs.forEach(tab => {
@@ -2445,9 +2516,12 @@
                         tab.type === 'excel' || tab.route?.includes('excel') ? '📊' :
                         tab.type === 'nhan-vien' || tab.route?.includes('tao-nhan-vien') ? '👤' : '🏥';
 
+        const cleanDisplayTitle = (tab.title || '').replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim() || 'Tab';
+        const tabTooltip = `${escapeHtml(cleanDisplayTitle)}${tab.account?.companyName ? ' [' + escapeHtml(tab.account.companyName) + ']' : ''} (Double-click để đổi tên)`;
+
         item.innerHTML = `
           <span class="tab-icon">${tabIcon}</span>
-          <span class="tab-title" title="${escapeHtml(tab.title)} (Double-click để đổi tên)">${escapeHtml(tab.title)}</span>
+          <span class="tab-title" title="${tabTooltip}">${escapeHtml(cleanDisplayTitle)}</span>
           <span class="tab-close" title="Đóng tab" onclick="event.stopPropagation(); closeTab('${tab.id}')">&times;</span>
         `;
 
@@ -2530,6 +2604,7 @@
       const newName = prompt('Nhập tên gợi nhớ mới cho tab:', tab.title);
       if (newName && newName.trim()) {
         tab.title = newName.trim();
+        tab.isCustomRenamed = true;
         renderTabsBar();
         showToast('Đã đổi tên tab.', 'info');
       }
@@ -2858,7 +2933,7 @@
     }
 
     function openTokenToolTab({ type, idPrefix, route, title, toastExisting, toastCreated }) {
-      const existing = tabs.find(t => t.type === type || t.id.startsWith(idPrefix) || (t.route && t.route.startsWith(route)));
+      const existing = tabs.find(t => (t.type === type && t.route && t.route.startsWith(route)) || (t.route && t.route.startsWith(route)));
       const currentActive = tabs.find(t => t.id === activeTabId);
       const sourceAccount = currentActive?.account?.accessToken
         ? currentActive.account
@@ -2931,7 +3006,7 @@
 
     // Mở Tab riêng cho Tool Trích xuất Danh mục Dịch vụ sang Excel (cURL to Excel)
     function openExcelToolTab() {
-      const existing = tabs.find(t => t.type === 'excel' || t.id.startsWith('tab_excel_'));
+      const existing = tabs.find(t => (t.type === 'excel' && t.route?.startsWith('/excel-tool')) || t.route?.startsWith('/excel-tool'));
 
       if (existing) {
         switchTab(existing.id);
@@ -3048,14 +3123,22 @@
       }
       const currentTab = tabs.find(t => t.id === activeTabId);
       if (currentTab && route) {
-        currentTab.route = route;
+        const selectedOpt = e.target.options[e.target.selectedIndex];
+        const rawModuleName = selectedOpt ? selectedOpt.text : '';
+        const cleanModuleName = rawModuleName.replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim();
+
+        updateTabTypeAndTitle(currentTab, route, cleanModuleName);
+        currentTab.isCustomRenamed = false; // Reset cờ để tab phản ánh ngay phân hệ người dùng vừa chọn
+
         const iframe = document.getElementById('frame-' + currentTab.id);
         if (iframe) {
           const targetOrigin = getTabOrigin(currentTab.subdomain);
           iframe.src = `${targetOrigin}${route}`;
-          showToast(`Chuyển phân hệ: ${e.target.options[e.target.selectedIndex].text}`, 'info');
+          showToast(`Chuyển phân hệ: ${cleanModuleName || rawModuleName}`, 'info');
           updateBottomUrlBar();
         }
+
+        renderTabsBar();
       }
     });
 
@@ -3218,6 +3301,30 @@
               }
             }
           }
+
+          // Tự động đồng bộ type và title cho tab nếu chuyển đổi phân hệ bên trong iframe
+          if (!matchedTab.isCustomRenamed) {
+            const detectedName = getModuleNameByRoute(fullRoute) || 
+              (matchedTab.pageTitle ? matchedTab.pageTitle.replace(/^VNPT HIS\s*[-–]\s*/i, '').trim() : '');
+            
+            const newType = fullRoute.includes('canh-bao') ? 'canh-bao' :
+                            fullRoute.includes('lien-thong') ? 'ksk' :
+                            fullRoute.includes('excel') ? 'excel' :
+                            fullRoute.includes('tao-nhan-vien') ? 'nhan-vien' : 'his';
+
+            let needReRender = false;
+            if (matchedTab.type !== newType) {
+              matchedTab.type = newType;
+              needReRender = true;
+            }
+            if (detectedName && matchedTab.title !== detectedName && !detectedName.includes('Khởi tạo')) {
+              matchedTab.title = detectedName;
+              needReRender = true;
+            }
+            if (needReRender) {
+              renderTabsBar();
+            }
+          }
         }
       }
     });
@@ -3293,6 +3400,8 @@
       if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
 
       activeTab.route = targetPath;
+      updateTabTypeAndTitle(activeTab, targetPath);
+      renderTabsBar();
       if (targetPath === '/lien-thong-ksk' || targetPath.startsWith('/lien-thong-ksk')) {
         const tok = activeTab.account?.accessToken || '';
         iframe.src = `${window.location.origin}${targetPath}${tok ? '?token=' + encodeURIComponent(tok) : ''}`;
