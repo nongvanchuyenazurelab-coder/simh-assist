@@ -2800,10 +2800,14 @@
 
     const TOKEN_TOOL_ROUTES = ['/lien-thong-ksk', '/canh-bao', '/tao-nhan-vien'];
     const ALL_TOOL_ROUTES = [...TOKEN_TOOL_ROUTES, '/excel-tool'];
+    const TOOL_TYPES = ['ksk', 'excel', 'canh-bao', 'nhan-vien'];
 
     function isToolTabObj(t) {
       if (!t) return false;
-      if (t.type || t.id.startsWith('tab_ksk_') || t.id.startsWith('tab_canhbao_') || t.id.startsWith('tab_excel_') || t.id.startsWith('tab_nhanvien_')) {
+      if (t.type && TOOL_TYPES.includes(t.type)) {
+        return true;
+      }
+      if (t.id && (t.id.startsWith('tab_ksk_') || t.id.startsWith('tab_canhbao_') || t.id.startsWith('tab_excel_') || t.id.startsWith('tab_nhanvien_'))) {
         return true;
       }
       return Boolean(t.route && ALL_TOOL_ROUTES.some(r => t.route.startsWith(r)));
@@ -2918,28 +2922,6 @@
                 hisIframe.src = `${hisOrigin}/init-session?sid=${encodeURIComponent(sessionId)}&route=${encodeURIComponent(targetRoute)}&_t=${Date.now()}`;
               }
             });
-          } else {
-            // Nếu chưa có tab HIS nào đang mở, tự động tạo tab HIS cho đơn vị vừa đăng nhập
-            tabCounter++;
-            const newHisTabId = 'tab_' + Date.now();
-            const subdomain = 't' + tabCounter;
-            const newHisTab = {
-              id: newHisTabId,
-              subdomain: subdomain,
-              title: titleName,
-              account: {
-                username: username,
-                fullName: userInfo?.fullName || username,
-                companyName: resolvedCompanyName,
-                phongName: defaultPhong?.name || '',
-                expiredTime: data.expiredTime,
-                accessToken: data.accessToken
-              },
-              sid: sessionId,
-              route: route
-            };
-            tabs.unshift(newHisTab);
-            createTabIframe(newHisTabId, subdomain, sessionId, route, data.accessToken);
           }
 
           // Cập nhật lại src cho iframe của tab công cụ hiện tại nếu cần
@@ -4368,31 +4350,20 @@
       const initialTab = {
         id: tab1Id,
         subdomain: 't1',
-        title: 'Tab 1: Tiếp nhận',
+        title: 'Khám Ngoại trú',
         account: null,
         sid: null,
         route: '/new/his/ngoaitru/tnkb/tiepnhan'
       };
       tabs.push(initialTab);
+      createTabIframe(tab1Id, 't1', '', '/new/his/ngoaitru/tnkb/tiepnhan');
+      renderTabsBar();
 
-      // Nếu có sẵn tài khoản mẫu, tự động đăng nhập và tải Tab 1
+      // Nếu có sẵn tài khoản mẫu, tự động điền form và đăng nhập trực tiếp vào Tab 1
       if (accountsList.length > 0) {
         const firstAcc = accountsList[0];
         fillForm(firstAcc.id);
-        createNewTabWithAuth(firstAcc.username, firstAcc.password, firstAcc.regionCode || 'region2', '/new/his/ngoaitru/tnkb/tiepnhan', firstAcc.name)
-          .then(() => {
-            // Xóa tab placeholder ban đầu nếu tab mới đã tạo
-            const placeholderIdx = tabs.findIndex(t => t.id === 'tab_1');
-            if (placeholderIdx !== -1 && tabs.length > 1) {
-              const placeholderFrame = document.getElementById('frame-tab_1');
-              if (placeholderFrame) placeholderFrame.remove();
-              tabs.splice(placeholderIdx, 1);
-              renderTabsBar();
-            }
-          });
-      } else {
-        createTabIframe(tab1Id, 't1', '', '/new/his/ngoaitru/tnkb/tiepnhan');
-        renderTabsBar();
+        handleLoginCurrentTab();
       }
     }
 
