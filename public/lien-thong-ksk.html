@@ -37,6 +37,10 @@
               <i class="fa-solid fa-hospital text-emerald-600"></i>
               <span id="headerHospitalCode">CSYT: ---</span>
             </span>
+            <span id="headerUnitTag" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-800 font-semibold px-2.5 py-0.5 rounded-lg border border-emerald-200 transition flex items-center gap-1.5" title="Đơn vị y tế đang chọn">
+              <i class="fa-solid fa-house-medical text-emerald-600"></i>
+              <span id="headerUnitName">Đơn vị: ---</span>
+            </span>
           </div>
           <div class="flex flex-wrap items-center gap-1.5 mt-1">
             <span class="text-[10px] font-semibold px-2 py-0.2 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">1. KSK</span>
@@ -2402,8 +2406,9 @@
     function notifyParentKskUrl() {
       try {
         if (window.parent && window.parent !== window) {
-          const unitEl = document.getElementById('headerSyncUnitName');
-          const uName = (unitEl ? unitEl.innerText : '').trim();
+          const unitEl = document.getElementById('headerUnitName') || document.getElementById('headerSyncUnitName');
+          const rawUnit = (unitEl ? unitEl.innerText : '').trim();
+          const uName = rawUnit.replace(/^Đơn vị:\s*/i, '').trim();
           window.parent.postMessage({
             type: 'YTCS_URL_CHANGED',
             tabId: window.name || '',
@@ -2412,7 +2417,7 @@
             search: window.location.search || '',
             hash: window.location.hash || '',
             unitName: uName,
-            title: uName ? `Cấu hình Liên thông - ${uName}` : (document.title || 'Cấu Hình Liên Thông')
+            title: 'Cấu hình Liên thông'
           }, '*');
         }
       } catch(e) {}
@@ -2532,6 +2537,13 @@
           const fullToken = rawTok.startsWith('Bearer ') ? rawTok : 'Bearer ' + rawTok;
           document.getElementById('tokenInput').value = fullToken;
           localStorage.setItem('ksk_token', fullToken);
+          const uName = event.data.companyName || event.data.unitName || '';
+          if (uName) {
+            const unitEl = document.getElementById('headerSyncUnitName');
+            if (unitEl) unitEl.innerText = uName;
+            const hUnitEl = document.getElementById('headerUnitName');
+            if (hUnitEl) hUnitEl.innerText = `Đơn vị: ${uName}`;
+          }
           parseJwtInfo(fullToken);
           showAlert('Đã đồng bộ phiên', `Đã nhận Token mới của đơn vị từ thanh quản trị.`, 'success');
           // Không tự động reload cả 5 tab nếu đang ở tab Bóc Dữ Liệu
@@ -2827,6 +2839,71 @@
       document.getElementById('alertBox').classList.add('hidden');
     }
 
+    function resolveUnitName(payload) {
+      // 1. Lấy từ URL query param nếu có
+      const urlParams = new URLSearchParams(window.location.search);
+      const qUnit = urlParams.get('unitName') || urlParams.get('companyName') || '';
+      if (qUnit) return qUnit;
+
+      const sub = String(payload?.sub || '').toLowerCase();
+      const csyt = String(payload?.HOSPITAL_CODE || payload?.MA_CSYT || '').toLowerCase();
+
+      // 2. Tìm trong danh sách tài khoản đã lưu (accountsList trên parent hoặc localStorage)
+      let accounts = [];
+      if (window.parent && window.parent !== window && Array.isArray(window.parent.accountsList)) {
+        accounts = window.parent.accountsList;
+      }
+      if (!accounts || accounts.length === 0) {
+        try {
+          const raw = localStorage.getItem('ytcs_saved_accounts');
+          if (raw) accounts = JSON.parse(raw);
+        } catch(e) {}
+      }
+      if (Array.isArray(accounts) && accounts.length > 0) {
+        const found = accounts.find(a => {
+          const u = String(a.username || '').toLowerCase();
+          return (sub && u === sub) || (csyt && u.startsWith(csyt + '.'));
+        });
+        if (found && found.name) return found.name;
+      }
+
+      // 3. Tìm trong tab cha (parent tabs)
+      if (window.parent && window.parent !== window && Array.isArray(window.parent.tabs)) {
+        const matchedTab = window.parent.tabs.find(t => {
+          const tUser = String(t.account?.username || '').toLowerCase();
+          return (sub && tUser === sub) || (csyt && tUser.startsWith(csyt + '.'));
+        });
+        if (matchedTab?.account?.companyName) return matchedTab.account.companyName;
+      }
+
+      // 4. Kiểm tra jhi-info NHƯNG chỉ nhận nếu KHỚP tài khoản / mã CSYT hiện tại!
+      const validateJhiInfo = (raw) => {
+        if (!raw) return '';
+        try {
+          const info = JSON.parse(raw);
+          const iUser = String(info.login || info.username || info.officer?.officerCode || '').toLowerCase();
+          const iCsyt = String(info.company?.code || info.companyCode || '').toLowerCase();
+          const isMatch = (sub && iUser === sub) || (csyt && iUser.startsWith(csyt + '.')) || (csyt && iCsyt === csyt);
+          if (isMatch) {
+            return info.company?.name || info.defaultKhoa?.name || info.fullName || '';
+          }
+        } catch(e) {}
+        return '';
+      };
+
+      if (window.parent && window.parent !== window) {
+        try {
+          const pName = validateJhiInfo(window.parent.localStorage.getItem('jhi-info'));
+          if (pName) return pName;
+        } catch(e) {}
+      }
+
+      const lName = validateJhiInfo(localStorage.getItem('jhi-info'));
+      if (lName) return lName;
+
+      return '';
+    }
+
     function parseJwtInfo(tokenStr) {
       try {
         const raw = tokenStr.replace('Bearer ', '').trim();
@@ -2847,23 +2924,11 @@
           if (syncHosp) syncHosp.innerText = payload.HOSPITAL_CODE || payload.MA_CSYT || '---';
 
           try {
-            let uName = '';
-            if (window.parent && window.parent !== window) {
-              const pInfo = window.parent.localStorage.getItem('jhi-info');
-              if (pInfo) {
-                const info = JSON.parse(pInfo);
-                uName = info?.company?.name || info?.fullName || '';
-              }
-            }
-            if (!uName) {
-              const rawInfo = localStorage.getItem('jhi-info');
-              if (rawInfo) {
-                const info = JSON.parse(rawInfo);
-                uName = info?.company?.name || info?.fullName || '';
-              }
-            }
+            const uName = resolveUnitName(payload);
             const unitEl = document.getElementById('headerSyncUnitName');
             if (unitEl && uName) unitEl.innerText = uName;
+            const hUnitEl = document.getElementById('headerUnitName');
+            if (hUnitEl && uName) hUnitEl.innerText = `Đơn vị: ${uName}`;
             notifyParentKskUrl();
           } catch(e) {}
 
@@ -2937,9 +3002,11 @@
         localStorage.setItem('ksk_token', fullToken);
         parseJwtInfo(fullToken);
         if (foundAccount) {
-          const uName = foundAccount.company?.name || foundAccount.fullName || '';
+          const uName = resolveUnitName(null) || foundAccount.company?.name || foundAccount.defaultKhoa?.name || foundAccount.fullName || '';
           const unitEl = document.getElementById('headerSyncUnitName');
           if (unitEl && uName) unitEl.innerText = uName;
+          const hUnitEl = document.getElementById('headerUnitName');
+          if (hUnitEl && uName) hUnitEl.innerText = `Đơn vị: ${uName}`;
           notifyParentKskUrl();
         }
         if (isManual) {

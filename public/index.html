@@ -571,7 +571,7 @@
       user-select: none;
       transition: all 0.15s ease;
       position: relative;
-      max-width: 320px;
+      max-width: 240px;
       min-width: 120px;
     }
 
@@ -1930,15 +1930,22 @@
       ) || null;
     }
 
-    function updateDropdownLabel(acc, activeExternalUsername = '') {
+    function updateDropdownLabel(acc, activeExternalUsername = '', externalCompanyName = '') {
       if (!accountDropdownLabel) return;
       if (!acc) {
-        accountDropdownLabel.textContent = '-- Danh sách tài khoản --';
-        if (accountDropdownTrigger) {
-          accountDropdownTrigger.classList.add('unselected');
-          accountDropdownTrigger.title = activeExternalUsername
-            ? `Đang dùng tài khoản ngoài danh sách (${activeExternalUsername}). Bấm để chọn tài khoản đã lưu`
-            : 'Chọn nhanh tài khoản đã lưu';
+        if (activeExternalUsername) {
+          const displayUnit = externalCompanyName ? `${externalCompanyName} (${activeExternalUsername})` : `-- Ngoài DS: ${activeExternalUsername} --`;
+          accountDropdownLabel.textContent = displayUnit;
+          if (accountDropdownTrigger) {
+            accountDropdownTrigger.classList.add('unselected');
+            accountDropdownTrigger.title = `Đang dùng tài khoản ngoài danh sách (${activeExternalUsername})${externalCompanyName ? ' - ' + externalCompanyName : ''}. Bấm để chọn tài khoản đã lưu`;
+          }
+        } else {
+          accountDropdownLabel.textContent = '-- Chọn đơn vị / Danh sách tài khoản --';
+          if (accountDropdownTrigger) {
+            accountDropdownTrigger.classList.add('unselected');
+            accountDropdownTrigger.title = 'Chọn nhanh tài khoản đã lưu';
+          }
         }
         return;
       }
@@ -1950,8 +1957,17 @@
       }
     }
 
-    function syncAccountSelectorByUsername(username) {
-      const matched = findSavedAccountByUsername(username);
+    function syncAccountSelectorByUsername(username, companyName = '') {
+      const u = String(username || '').trim();
+      if (!u) {
+        currentSelectedAccountId = null;
+        savedAccountsSelect.value = '';
+        if (newTabAccountSelect) newTabAccountSelect.value = '';
+        updateDropdownLabel(null, '', '');
+        renderSearchableDropdownList();
+        return;
+      }
+      const matched = findSavedAccountByUsername(u);
       if (matched) {
         currentSelectedAccountId = matched.id;
         savedAccountsSelect.value = matched.id;
@@ -1961,7 +1977,7 @@
         currentSelectedAccountId = null;
         savedAccountsSelect.value = '';
         if (newTabAccountSelect) newTabAccountSelect.value = '';
-        updateDropdownLabel(null, String(username || '').trim());
+        updateDropdownLabel(null, u, companyName);
       }
       renderSearchableDropdownList();
     }
@@ -2241,8 +2257,13 @@
       }
     });
 
-    inputUsername.addEventListener('input', () => {
-      syncAccountSelectorByUsername(inputUsername.value);
+    ['input', 'change', 'paste', 'blur', 'keyup'].forEach(evt => {
+      inputUsername.addEventListener(evt, () => {
+        syncAccountSelectorByUsername(inputUsername.value);
+      });
+    });
+    inputUsername.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') handleLoginCurrentTab();
     });
 
     // Lắng nghe sự kiện click/input cho Searchable Dropdown
@@ -2435,16 +2456,43 @@
     // --- QUẢN LÝ ĐA TAB (IN-APP TABS) ---
     function getCurrentUnitName(tab) {
       if (tab?.account?.companyName) return tab.account.companyName;
+
+      // 1. Kiểm tra tài khoản đang hiển thị trên ô Header (inputUsername)
+      const currentInputUser = (typeof inputUsername !== 'undefined' && inputUsername) ? inputUsername.value.trim().toLowerCase() : '';
+      if (currentInputUser && typeof findSavedAccountByUsername === 'function') {
+        const saved = findSavedAccountByUsername(currentInputUser);
+        if (saved && saved.name) return saved.name;
+      }
+
+      // 2. Kiểm tra activeTab nếu có
       const activeTab = typeof tabs !== 'undefined' ? tabs.find(t => t.id === activeTabId) : null;
       if (activeTab?.account?.companyName) return activeTab.account.companyName;
+
+      // 3. Nếu tab truyền vào có username, tìm theo username đó
+      if (tab?.account?.username && typeof findSavedAccountByUsername === 'function') {
+        const saved = findSavedAccountByUsername(tab.account.username);
+        if (saved && saved.name) return saved.name;
+      }
+
+      // 4. Tìm trong tabs có tab nào khớp username đang chọn trên Header không
+      if (typeof tabs !== 'undefined' && currentInputUser) {
+        const matchUserTab = tabs.find(t => String(t.account?.username || '').toLowerCase() === currentInputUser);
+        if (matchUserTab?.account?.companyName) return matchUserTab.account.companyName;
+      }
+
       const anyTabWithAcc = typeof tabs !== 'undefined' ? tabs.find(t => t.account?.companyName) : null;
       if (anyTabWithAcc?.account?.companyName) return anyTabWithAcc.account.companyName;
+
+      // 5. Kiểm tra jhi-info nhưng chỉ nhận nếu khớp tài khoản đang chọn trên Header
       try {
         const raw = localStorage.getItem('jhi-info');
         if (raw) {
           const info = JSON.parse(raw);
-          if (info?.company?.name) return info.company.name;
-          if (info?.fullName) return info.fullName;
+          const iUser = String(info.login || info.username || '').toLowerCase();
+          if (!currentInputUser || (iUser && (iUser === currentInputUser || currentInputUser.startsWith(iUser)))) {
+            if (info?.company?.name) return info.company.name;
+            if (info?.fullName) return info.fullName;
+          }
         }
       } catch(e) {}
       return '';
@@ -2455,16 +2503,10 @@
       const cleanR = route.split('?')[0].split('#')[0];
 
       // 1. Tool routes đặc biệt
-      if (cleanR.includes('lien-thong')) {
-        const unitName = getCurrentUnitName(tab);
-        return unitName ? `Cấu hình Liên thông - ${unitName}` : 'Cấu hình Liên thông';
-      }
+      if (cleanR.includes('lien-thong')) return 'Cấu hình Liên thông';
       if (cleanR.includes('excel')) return 'Xuất Excel Danh mục DV';
       if (cleanR.includes('canh-bao')) return 'Cảnh Báo Đơn Vị';
-      if (cleanR.includes('tao-nhan-vien')) {
-        const unitName = getCurrentUnitName(tab);
-        return unitName ? `Tạo nhanh NV & TK - ${unitName}` : 'Tạo nhanh NV & TK';
-      }
+      if (cleanR.includes('tao-nhan-vien')) return 'Tạo nhanh NV & TK';
       if (cleanR === '/new/his/chon-khoaphong') return 'Chọn khoa phòng';
       if (cleanR === '/new/his/dang-nhap') return 'Login gốc';
 
@@ -2520,19 +2562,8 @@
         tab.type = 'his';
       }
 
-      // Cập nhật title của tab theo tên phân hệ (kèm tên đơn vị cho Cấu hình Liên thông và Tạo nhanh NV & TK)
+      // Cập nhật title của tab theo tên phân hệ
       let modName = explicitName || getModuleNameByRoute(newRoute, tab);
-      if (newRoute.includes('lien-thong')) {
-        const unitName = getCurrentUnitName(tab);
-        if (unitName) {
-          modName = `Cấu hình Liên thông - ${unitName}`;
-        }
-      } else if (newRoute.includes('tao-nhan-vien')) {
-        const unitName = getCurrentUnitName(tab);
-        if (unitName) {
-          modName = `Tạo nhanh NV & TK - ${unitName}`;
-        }
-      }
       if (modName) {
         tab.title = modName;
       }
@@ -2550,7 +2581,19 @@
                         tab.type === 'excel' || tab.route?.includes('excel') ? '📊' :
                         tab.type === 'nhan-vien' || tab.route?.includes('tao-nhan-vien') ? '👤' : '🏥';
 
-        const cleanDisplayTitle = (tab.title || '').replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim() || 'Tab';
+        let cleanDisplayTitle = (tab.title || '').replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim() || 'Tab';
+        // Đảm bảo tab công cụ cố định tên chuẩn, không bị dính tên đơn vị cũ/nhầm lẫn
+        if (!tab.isCustomRenamed) {
+          if (tab.type === 'ksk' || tab.route?.includes('lien-thong')) {
+            cleanDisplayTitle = 'Cấu hình Liên thông';
+          } else if (tab.type === 'nhan-vien' || tab.route?.includes('tao-nhan-vien')) {
+            cleanDisplayTitle = 'Tạo nhanh NV & TK';
+          } else if (tab.type === 'canh-bao' || tab.route?.includes('canh-bao')) {
+            cleanDisplayTitle = 'Cảnh Báo Đơn Vị';
+          } else if (tab.type === 'excel' || tab.route?.includes('excel')) {
+            cleanDisplayTitle = 'Xuất Excel Danh mục DV';
+          }
+        }
         const tabTooltip = `${escapeHtml(cleanDisplayTitle)}${tab.account?.companyName ? ' [' + escapeHtml(tab.account.companyName) + ']' : ''} (Double-click để đổi tên)`;
 
         item.innerHTML = `
@@ -2626,7 +2669,10 @@
       }
 
       if (targetTab.account && targetTab.account.username) {
-        syncAccountSelectorByUsername(targetTab.account.username);
+        inputUsername.value = targetTab.account.username;
+        syncAccountSelectorByUsername(targetTab.account.username, targetTab.account.companyName);
+      } else {
+        syncAccountSelectorByUsername(inputUsername.value);
       }
 
       updateBottomUrlBar();
@@ -2783,16 +2829,6 @@
         if (isToolTabObj(t)) {
           t.account = { ...accountObj };
           if (sessionId) t.sid = sessionId;
-          if (!t.isCustomRenamed) {
-            const uName = accountObj.companyName || getCurrentUnitName(t);
-            if (uName) {
-              if (t.type === 'ksk' || t.route?.includes('lien-thong')) {
-                t.title = `Cấu hình Liên thông - ${uName}`;
-              } else if (t.type === 'nhan-vien' || t.route?.includes('tao-nhan-vien')) {
-                t.title = `Tạo nhanh NV & TK - ${uName}`;
-              }
-            }
-          }
         }
       });
       renderTabsBar();
@@ -2826,7 +2862,22 @@
         const defaultKhoa = data.defaultKhoa;
         const defaultPhong = data.defaultPhong;
         const userInfo = data.userInfo;
-        const titleName = defaultKhoa?.name || userInfo?.fullName || username;
+        const savedAcc = typeof findSavedAccountByUsername === 'function' ? findSavedAccountByUsername(username) : null;
+        const resolvedCompanyName = defaultKhoa?.name || userInfo?.company?.name || savedAcc?.name || 'Điểm trạm';
+        const titleName = resolvedCompanyName || userInfo?.fullName || username;
+
+        // Cập nhật nhãn chọn đơn vị trên Header ngay khi đăng nhập thành công
+        syncAccountSelectorByUsername(username, resolvedCompanyName);
+
+        // Lưu thông tin đơn vị mới vào localStorage tránh đọc phải jhi-info cũ của đơn vị khác
+        try {
+          if (userInfo) {
+            localStorage.setItem('jhi-info', JSON.stringify(userInfo));
+          }
+          if (data.accessToken) {
+            localStorage.setItem('jhi-accessToken', JSON.stringify(data.accessToken));
+          }
+        } catch(e) {}
 
         const isToolTab = isToolTabObj(currentTab);
 
@@ -2836,7 +2887,7 @@
           currentTab.account = {
             username: username,
             fullName: userInfo?.fullName || username,
-            companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+            companyName: resolvedCompanyName,
             phongName: defaultPhong?.name || '',
             expiredTime: data.expiredTime,
             accessToken: data.accessToken
@@ -2853,7 +2904,7 @@
               hisTab.account = {
                 username: username,
                 fullName: userInfo?.fullName || username,
-                companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+                companyName: resolvedCompanyName,
                 phongName: defaultPhong?.name || '',
                 expiredTime: data.expiredTime,
                 accessToken: data.accessToken
@@ -2879,7 +2930,7 @@
               account: {
                 username: username,
                 fullName: userInfo?.fullName || username,
-                companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+                companyName: resolvedCompanyName,
                 phongName: defaultPhong?.name || '',
                 expiredTime: data.expiredTime,
                 accessToken: data.accessToken
@@ -2896,7 +2947,11 @@
           if (toolIframe) {
             const matchedToolRoute = TOKEN_TOOL_ROUTES.find(r => currentTab.route && currentTab.route.startsWith(r));
             if (matchedToolRoute) {
-              toolIframe.src = `${matchedToolRoute}?token=${encodeURIComponent(data.accessToken)}`;
+              const uName = currentTab.account?.companyName || resolvedCompanyName;
+              const params = new URLSearchParams();
+              params.set('token', data.accessToken);
+              if (uName) params.set('unitName', uName);
+              toolIframe.src = `${matchedToolRoute}?${params.toString()}`;
             }
           }
         } else {
@@ -2905,7 +2960,7 @@
           currentTab.account = {
             username: username,
             fullName: userInfo?.fullName || username,
-            companyName: defaultKhoa?.name || userInfo?.company?.name || 'Điểm trạm',
+            companyName: resolvedCompanyName,
             phongName: defaultPhong?.name || '',
             expiredTime: data.expiredTime,
             accessToken: data.accessToken
@@ -2980,6 +3035,7 @@
         broadcastTokenToToolFrames(newTab.account, sessionId);
 
         renderTabsBar();
+        switchTab(newTabId);
         showToast(`Đã mở Tab mới: ${tabTitle}!`, 'success');
       } catch (err) {
         console.error('Lỗi mở tab mới:', err);
@@ -3000,16 +3056,6 @@
       if (existing) {
         if (sourceAccount) {
           existing.account = { ...sourceAccount };
-        }
-        if (!existing.isCustomRenamed) {
-          const unitName = sourceAccount?.companyName || getCurrentUnitName(existing);
-          if (unitName) {
-            if (existing.type === 'ksk' || existing.route?.includes('lien-thong')) {
-              existing.title = `Cấu hình Liên thông - ${unitName}`;
-            } else if (existing.type === 'nhan-vien' || existing.route?.includes('tao-nhan-vien')) {
-              existing.title = `Tạo nhanh NV & TK - ${unitName}`;
-            }
-          }
         }
         switchTab(existing.id);
         const iframe = document.getElementById('frame-' + existing.id);
@@ -3046,16 +3092,6 @@
       const newTabId = idPrefix + Date.now();
       const subdomain = 't' + tabCounter;
       let finalTitle = title;
-      if (!finalTitle.includes(' - ')) {
-        const u = sourceAccount?.companyName || getCurrentUnitName(currentActive);
-        if (u) {
-          if (type === 'ksk' || route?.includes('lien-thong')) {
-            finalTitle = `Cấu hình Liên thông - ${u}`;
-          } else if (type === 'nhan-vien' || route?.includes('tao-nhan-vien')) {
-            finalTitle = `Tạo nhanh NV & TK - ${u}`;
-          }
-        }
-      }
       const newTab = {
         id: newTabId,
         subdomain: subdomain,
@@ -3076,15 +3112,11 @@
 
     // Mở Tab riêng cho Cấu hình Liên thông KSK / ĐTĐT / Viện phí
     function openKskTab() {
-      const currentActive = tabs.find(t => t.id === activeTabId);
-      const unitName = getCurrentUnitName(currentActive);
-      const tabTitle = unitName ? `Cấu hình Liên thông - ${unitName}` : 'Cấu hình Liên thông';
-
       openTokenToolTab({
         type: 'ksk',
         idPrefix: 'tab_ksk_',
         route: '/lien-thong-ksk',
-        title: tabTitle,
+        title: '🛠️ Cấu hình Liên thông',
         toastExisting: 'Đã chuyển sang Tab Cấu hình Liên thông.',
         toastCreated: 'Đã mở Tab Cấu hình Nghiệp vụ (KSK, ĐTĐT, Viện Phí, Mẹ & Bé, Dược)!'
       });
@@ -3158,15 +3190,11 @@
 
     // Mở Tab riêng cho Tạo nhanh Nhân viên & Người dùng
     function openNhanVienTab() {
-      const currentActive = tabs.find(t => t.id === activeTabId);
-      const unitName = getCurrentUnitName(currentActive);
-      const tabTitle = unitName ? `Tạo nhanh NV & TK - ${unitName}` : 'Tạo nhanh NV & TK';
-
       openTokenToolTab({
         type: 'nhan-vien',
         idPrefix: 'tab_nhanvien_',
         route: '/tao-nhan-vien',
-        title: tabTitle,
+        title: '👤 Tạo nhanh NV & TK',
         toastExisting: 'Đã chuyển sang Tab Tạo nhanh Nhân viên & Tài khoản.',
         toastCreated: 'Đã mở Tab Tạo nhanh Nhân viên & Tài khoản!'
       });

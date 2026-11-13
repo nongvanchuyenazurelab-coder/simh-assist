@@ -506,13 +506,15 @@
     <div class="brand">
       <div class="brand-icon">👤</div>
       <div>
-        <h1>Tạo Nhanh Nhân Viên &amp; Người Dùng</h1>
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+          <h1>Tạo Nhanh Nhân Viên &amp; Người Dùng</h1>
+          <span class="pill purple" id="headerUnitTag" title="Đơn vị y tế đang chọn">🏥 <span id="headerUnitName">Đơn vị: ---</span></span>
+        </div>
         <p>Tự động gọi <code>officer/create</code> ➔ lấy ID ➔ gọi <code>admuser/dangky</code> cho đơn vị đang đăng nhập</p>
       </div>
     </div>
     <div class="unit-pills" id="unitPills">
       <span class="pill warn" id="pillTokenStatus">Chưa có Token</span>
-      <span class="pill hidden" id="pillUnitName"></span>
       <span class="pill hidden" id="pillCsyt"></span>
       <span class="pill hidden" id="pillUser"></span>
       <span class="pill hidden" id="pillExp"></span>
@@ -647,7 +649,9 @@
                 <div class="defaults-grid">
                   <div class="field">
                     <label for="defKhoaId">Khoa ID</label>
-                    <input type="number" id="defKhoaId" class="input mono" value="200">
+                    <select id="defKhoaId" class="input mono">
+                      <option value="200">200 - Khoa mặc định</option>
+                    </select>
                   </div>
                   <div class="field">
                     <label for="defMaKhoaTT12">Mã khoa đẩy cổng</label>
@@ -701,11 +705,19 @@
                   </div>
                   <div class="field">
                     <label for="defRoleId">Nhóm người dùng (roleId)</label>
-                    <input type="number" id="defRoleId" class="input mono" value="204">
+                    <select id="defRoleId" class="input mono">
+                      <option value="200" selected>200 - Điều dưỡng (Mặc định)</option>
+                      <option value="204">204 - Quản trị đơn vị</option>
+                      <option value="23">23 - Khám bệnh ngoại trú</option>
+                    </select>
                   </div>
                   <div class="field">
                     <label for="defSignTitleId">Chức danh ký (signTitle)</label>
-                    <input type="number" id="defSignTitleId" class="input mono" value="1002">
+                    <select id="defSignTitleId" class="input mono">
+                      <option value="0">0 - Không gán chức danh</option>
+                      <option value="18001" selected>18001 - Con dấu gửi BHXH</option>
+                      <option value="1002">1002 - Mặc định mẫu</option>
+                    </select>
                   </div>
                   <div class="field">
                     <label for="defUserStatus">Trạng thái TK (status)</label>
@@ -969,6 +981,10 @@
         const username = String(params?.username || officerCode).trim();
         const userPwd = String(d.userPwd || 'Hmis@2026');
 
+        const signTitleId = toIntOrFallback(d.signTitleId, 0);
+        const signTitles = (signTitleId > 0) ? [{ id: signTitleId }] : [];
+        const roleId = toIntOrFallback(d.roleId, 200);
+
         return {
           id: null,
           username: username,
@@ -982,8 +998,8 @@
           auth2FA: 0,
           type2fa: null,
           company: { id: toIntOrFallback(d.companyId, 1) },
-          nhomNguoiDungs: [{ roleId: toIntOrFallback(d.roleId, 204) }],
-          signTitles: [{ id: toIntOrFallback(d.signTitleId, 1002) }],
+          nhomNguoiDungs: [{ roleId: roleId }],
+          signTitles: signTitles,
           adminRegion: 0
         };
       }
@@ -1199,8 +1215,21 @@
         };
       }
 
+      function setSelectValueOrAppend(selectEl, val, label) {
+        if (!selectEl) return;
+        const sVal = String(val);
+        const exists = Array.from(selectEl.options).some(o => o.value === sVal);
+        if (!exists) {
+          const opt = document.createElement('option');
+          opt.value = sVal;
+          opt.textContent = label || `${sVal} (Đang chọn)`;
+          selectEl.appendChild(opt);
+        }
+        selectEl.value = sVal;
+      }
+
       function applyDefaultsToUI(d = DEFAULTS_CONFIG) {
-        els.defKhoaId.value = d.khoaId;
+        setSelectValueOrAppend(els.defKhoaId, d.khoaId, `Khoa #${d.khoaId}`);
         els.defMaKhoaTT12.value = d.maKhoaTT12;
         els.defPhamVi.value = d.phamViChuyenMon;
         els.defDanTocId.value = d.danTocId;
@@ -1212,8 +1241,8 @@
         els.defUserPwd.value = d.userPwd;
         els.defUserLevel.value = d.userLevel;
         els.defUserType.value = d.userType;
-        els.defRoleId.value = d.roleId;
-        els.defSignTitleId.value = d.signTitleId;
+        setSelectValueOrAppend(els.defRoleId, d.roleId, `Nhóm quyền #${d.roleId}`);
+        setSelectValueOrAppend(els.defSignTitleId, d.signTitleId, `Chức danh #${d.signTitleId}`);
         els.defUserStatus.value = d.userStatus;
         updateAccountPreview();
       }
@@ -1231,10 +1260,16 @@
 
       function updateUnitPills() {
         const jwt = state.jwtPayload;
+        const uName = state.parentCompanyName || '';
+        const headerUnitEl = document.getElementById('headerUnitName');
+        if (headerUnitEl) {
+          headerUnitEl.textContent = uName ? `Đơn vị: ${uName}` : 'Đơn vị: ---';
+        }
+
         if (!state.token) {
           els.pillTokenStatus.className = 'pill warn';
           els.pillTokenStatus.textContent = 'Chưa có Token';
-          els.pillUnitName.classList.add('hidden');
+          if (els.pillUnitName) els.pillUnitName.classList.add('hidden');
           els.pillCsyt.classList.add('hidden');
           els.pillUser.classList.add('hidden');
           els.pillExp.classList.add('hidden');
@@ -1246,11 +1281,13 @@
         els.pillTokenStatus.className = isExpired ? 'pill err' : 'pill ok';
         els.pillTokenStatus.textContent = isExpired ? '⚠️ Token đã hết hạn' : '✅ Token sẵn sàng';
 
-        if (state.parentCompanyName) {
-          els.pillUnitName.className = 'pill purple';
-          els.pillUnitName.textContent = `🏥 ${state.parentCompanyName}`;
-        } else {
-          els.pillUnitName.classList.add('hidden');
+        if (els.pillUnitName) {
+          if (uName) {
+            els.pillUnitName.className = 'pill purple';
+            els.pillUnitName.textContent = `🏥 ${uName}`;
+          } else {
+            els.pillUnitName.classList.add('hidden');
+          }
         }
 
         const maCsyt = jwt?.MA_CSYT || jwt?.HOSPITAL_CODE || '';
@@ -1281,6 +1318,71 @@
         }
       }
 
+      function resolveUnitName(payload) {
+        // 1. Lấy từ URL query param nếu có
+        const urlParams = new URLSearchParams(window.location.search);
+        const qUnit = urlParams.get('unitName') || urlParams.get('companyName') || urlParams.get('unit') || '';
+        if (qUnit) return qUnit;
+
+        const sub = String(payload?.sub || '').toLowerCase();
+        const csyt = String(payload?.HOSPITAL_CODE || payload?.MA_CSYT || '').toLowerCase();
+
+        // 2. Tìm trong danh sách tài khoản đã lưu
+        let accounts = [];
+        if (window.parent && window.parent !== window && Array.isArray(window.parent.accountsList)) {
+          accounts = window.parent.accountsList;
+        }
+        if (!accounts || accounts.length === 0) {
+          try {
+            const raw = localStorage.getItem('ytcs_saved_accounts');
+            if (raw) accounts = JSON.parse(raw);
+          } catch(e) {}
+        }
+        if (Array.isArray(accounts) && accounts.length > 0) {
+          const found = accounts.find(a => {
+            const u = String(a.username || '').toLowerCase();
+            return (sub && u === sub) || (csyt && u.startsWith(csyt + '.'));
+          });
+          if (found && found.name) return found.name;
+        }
+
+        // 3. Tìm trong parent tabs
+        if (window.parent && window.parent !== window && Array.isArray(window.parent.tabs)) {
+          const matchedTab = window.parent.tabs.find(t => {
+            const tUser = String(t.account?.username || '').toLowerCase();
+            return (sub && tUser === sub) || (csyt && tUser.startsWith(csyt + '.'));
+          });
+          if (matchedTab?.account?.companyName) return matchedTab.account.companyName;
+        }
+
+        // 4. Kiểm tra jhi-info NHƯNG chỉ nhận nếu KHỚP tài khoản / mã CSYT hiện tại!
+        const validateJhiInfo = (raw) => {
+          if (!raw) return '';
+          try {
+            const info = JSON.parse(raw);
+            const iUser = String(info.login || info.username || info.officer?.officerCode || '').toLowerCase();
+            const iCsyt = String(info.company?.code || info.companyCode || '').toLowerCase();
+            const isMatch = (sub && iUser === sub) || (csyt && iUser.startsWith(csyt + '.')) || (csyt && iCsyt === csyt);
+            if (isMatch) {
+              return info.company?.name || info.defaultKhoa?.name || info.fullName || '';
+            }
+          } catch(e) {}
+          return '';
+        };
+
+        if (window.parent && window.parent !== window) {
+          try {
+            const pName = validateJhiInfo(window.parent.localStorage.getItem('jhi-info'));
+            if (pName) return pName;
+          } catch(e) {}
+        }
+
+        const lName = validateJhiInfo(localStorage.getItem('jhi-info'));
+        if (lName) return lName;
+
+        return '';
+      }
+
       function setToken(rawToken, meta = {}) {
         const clean = extractTokenInput(rawToken);
         const tokenChanged = clean !== state.token;
@@ -1289,12 +1391,8 @@
         const incomingUnit = meta.companyName || meta.unitName || '';
         if (incomingUnit) {
           state.parentCompanyName = incomingUnit;
-        } else if (!state.parentCompanyName) {
-          try {
-            const info = JSON.parse(localStorage.getItem('jhi-info') || '{}');
-            if (info.companyName) state.parentCompanyName = info.companyName;
-            else if (info.hospitalName) state.parentCompanyName = info.hospitalName;
-          } catch(e) {}
+        } else {
+          state.parentCompanyName = resolveUnitName(state.jwtPayload);
         }
         if (meta.fullName !== undefined) state.parentFullName = meta.fullName || '';
         els.tokenInput.value = clean;
@@ -1310,6 +1408,7 @@
         notifyParentNhanVienUrl();
         if (clean && tokenChanged) {
           loadOfficersList(true);
+          inspectUnitMetadata(true);
         }
       }
 
@@ -1325,7 +1424,7 @@
               search: window.location.search || '',
               hash: window.location.hash || '',
               unitName: uName,
-              title: uName ? `Tạo nhanh NV & TK - ${uName}` : 'Tạo nhanh NV & TK'
+              title: 'Tạo nhanh NV & TK'
             }, '*');
           }
         } catch(e) {}
@@ -1527,8 +1626,17 @@
             const s2 = res.step2Result || {};
             els.btnRetryStep2.classList.remove('hidden');
             els.btnRetryStep2.textContent = `🔄 Chỉ chạy lại Bước 2 (officer.id = ${res.officerId})`;
+            let hint = `Nhân viên #${res.officerId} đã được tạo ở Bước 1.`;
+            if (s2.message && (s2.message.includes('đã tồn tại') || s2.message.includes('already exists'))) {
+              hint += ` Username <code>${escapeHtml(res.admUserPayload.username)}</code> đã có tài khoản trên hệ thống — vui lòng đổi Mã NV/Username khác rồi bấm "Chỉ chạy lại Bước 2" hoặc kiểm tra ở bảng danh sách bên dưới.`;
+            } else if (s2.message && (s2.message.includes('Id {0} không tồn tại') || s2.message.includes('không tồn tại'))) {
+              hint += ` Nhóm quyền (roleId) hoặc Chức danh không tồn tại trên đơn vị này. Hệ thống đã tự động kiểm tra lại danh sách Nhóm quyền của đơn vị để bạn chọn lại ở mục "Tùy biến tham số".`;
+              inspectUnitMetadata(true);
+            } else {
+              hint += ` Hãy sửa thông tin (vd: Mã NV / username bị trùng) và bấm nút "Chỉ chạy lại Bước 2" nếu cần.`;
+            }
             setStepUI(2, 'error', `Lỗi (${s2.httpStatus || 'ERR'})`,
-              `<strong>Đăng ký tài khoản thất bại:</strong> ${escapeHtml(s2.message || 'Lỗi không xác định')}<br><span class="hint">Nhân viên #${res.officerId} đã được tạo ở Bước 1 — hãy sửa thông tin (vd: Mã NV / username bị trùng) và bấm nút "Chỉ chạy lại Bước 2" nếu cần.</span>`,
+              `<strong>Đăng ký tài khoản thất bại:</strong> ${escapeHtml(s2.message || 'Lỗi không xác định')}<br><span class="hint">${hint}</span>`,
               { request: res.admUserPayload, response: s2.json || s2.rawText });
             showToast('Bước 2 thất bại: ' + (s2.message || ''), 'error');
             loadOfficersList(true);
@@ -1773,14 +1881,16 @@
         }
       }
 
-      async function inspectUnitMetadata() {
+      async function inspectUnitMetadata(silent = false) {
         if (!state.token) {
-          showToast('Vui lòng nhập Token trước!', 'warning');
+          if (!silent) showToast('Vui lòng nhập Token trước!', 'warning');
           return;
         }
         const companyId = toIntOrFallback(els.defCompanyId.value, 1);
-        els.unitMetaBox.classList.remove('hidden');
-        els.unitMetaBox.innerHTML = 'Đang kiểm tra Khoa, Nhóm quyền và Chức danh từ server...';
+        if (!silent) {
+          els.unitMetaBox.classList.remove('hidden');
+          els.unitMetaBox.innerHTML = 'Đang kiểm tra Khoa, Nhóm quyền và Chức danh từ server...';
+        }
         try {
           const [khoaRes, roleRes, signRes] = await Promise.all([
             apiGetJson(`/api/common/organization/khoa?companyId=${companyId}`),
@@ -1796,13 +1906,72 @@
             ? (signRes.json?.data?.content || signRes.json?.data)
             : [];
 
-          els.unitMetaBox.innerHTML = `
-            <div><strong>Khoa (${khoas.length}):</strong> ${khoas.slice(0, 8).map(k => `<code>${escapeHtml(k.id)}</code>: ${escapeHtml(k.name)}`).join(' | ') || '—'}</div>
-            <div style="margin-top:4px;"><strong>Nhóm quyền mẫu:</strong> ${roles.slice(0, 6).map(r => `<code>${escapeHtml(r.roleId || r.id)}</code>: ${escapeHtml(r.roleName || r.roleCode)}`).join(' | ') || '—'}</div>
-            <div style="margin-top:4px;"><strong>Chức danh mẫu:</strong> ${signs.slice(0, 6).map(s => `<code>${escapeHtml(s.id)}</code>: ${escapeHtml(s.titleName || s.titleCode)}`).join(' | ') || '—'}</div>
-          `;
+          // 1. Cập nhật Khoa vào Select
+          if (khoas.length > 0) {
+            const curKhoa = String(els.defKhoaId.value || '');
+            els.defKhoaId.innerHTML = khoas.map(k => `<option value="${k.id}">${k.id} - ${escapeHtml(k.name)}</option>`).join('');
+            if (khoas.some(k => String(k.id) === curKhoa)) {
+              els.defKhoaId.value = curKhoa;
+            } else if (khoas.some(k => k.id === 200)) {
+              els.defKhoaId.value = '200';
+            } else {
+              els.defKhoaId.value = String(khoas[0].id);
+            }
+          }
+
+          // 2. Cập nhật Nhóm quyền (roleId) vào Select - Tự động loại bỏ roleId không tồn tại tránh lỗi 422 "Id {0} không tồn tại!"
+          if (roles.length > 0) {
+            const curRole = String(els.defRoleId.value || '');
+            els.defRoleId.innerHTML = roles.map(r => {
+              const rId = r.roleId || r.id;
+              const rName = r.roleName || r.roleCode || ('Role #' + rId);
+              return `<option value="${rId}">${rId} - ${escapeHtml(rName)}</option>`;
+            }).join('');
+
+            if (roles.some(r => String(r.roleId || r.id) === curRole)) {
+              els.defRoleId.value = curRole;
+            } else if (roles.some(r => (r.roleId || r.id) === 204)) {
+              els.defRoleId.value = '204';
+            } else if (roles.some(r => (r.roleId || r.id) === 200)) {
+              els.defRoleId.value = '200';
+            } else {
+              const dduong = roles.find(r => (r.roleName || '').toLowerCase().includes('điều dưỡng') || (r.roleName || '').toLowerCase().includes('khám'));
+              els.defRoleId.value = String(dduong ? (dduong.roleId || dduong.id) : (roles[0].roleId || roles[0].id));
+            }
+          }
+
+          // 3. Cập nhật Chức danh ký vào Select
+          if (signs.length > 0) {
+            const curSign = String(els.defSignTitleId.value || '');
+            const signOpts = [
+              '<option value="0">0 - Không gán chức danh ký</option>',
+              ...signs.map(s => `<option value="${s.id}">${s.id} - ${escapeHtml(s.titleName || s.titleCode)}</option>`)
+            ];
+            els.defSignTitleId.innerHTML = signOpts.join('');
+            if (curSign && signs.some(s => String(s.id) === curSign)) {
+              els.defSignTitleId.value = curSign;
+            } else if (signs.some(s => s.id === 18001)) {
+              els.defSignTitleId.value = '18001';
+            } else if (signs.some(s => s.id === 1002)) {
+              els.defSignTitleId.value = '1002';
+            } else {
+              els.defSignTitleId.value = '0';
+            }
+          }
+
+          updateAccountPreview();
+
+          if (!silent) {
+            els.unitMetaBox.innerHTML = `
+              <div><strong>Khoa (${khoas.length}):</strong> ${khoas.slice(0, 8).map(k => `<code>${escapeHtml(k.id)}</code>: ${escapeHtml(k.name)}`).join(' | ') || '—'}</div>
+              <div style="margin-top:4px;"><strong>Nhóm quyền hợp lệ (${roles.length}):</strong> ${roles.slice(0, 6).map(r => `<code>${escapeHtml(r.roleId || r.id)}</code>: ${escapeHtml(r.roleName || r.roleCode)}`).join(' | ') || '—'}</div>
+              <div style="margin-top:4px;"><strong>Chức danh ký (${signs.length}):</strong> ${signs.slice(0, 6).map(s => `<code>${escapeHtml(s.id)}</code>: ${escapeHtml(s.titleName || s.titleCode)}`).join(' | ') || '—'}</div>
+            `;
+          }
         } catch (err) {
-          els.unitMetaBox.innerHTML = `<span style="color:var(--danger)">Lỗi kiểm tra: ${escapeHtml(err.message)}</span>`;
+          if (!silent) {
+            els.unitMetaBox.innerHTML = `<span style="color:var(--danger)">Lỗi kiểm tra: ${escapeHtml(err.message)}</span>`;
+          }
         }
       }
 
@@ -1907,17 +2076,12 @@
         if (qToken) {
           setToken(qToken, { companyName: qUnit });
         } else {
-          if (qUnit) {
-            state.parentCompanyName = qUnit;
-          } else {
-            try {
-              const info = JSON.parse(localStorage.getItem('jhi-info') || '{}');
-              if (info.companyName) state.parentCompanyName = info.companyName;
-              else if (info.hospitalName) state.parentCompanyName = info.hospitalName;
-            } catch(e) {}
-          }
+          state.parentCompanyName = qUnit || resolveUnitName(state.jwtPayload);
           updateUnitPills();
           notifyParentNhanVienUrl();
+          if (state.token) {
+            inspectUnitMetadata(true);
+          }
         }
       })();
     })(typeof window !== 'undefined' ? window : globalThis);
