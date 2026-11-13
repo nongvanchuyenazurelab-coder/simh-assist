@@ -2461,7 +2461,10 @@
       }
       if (cleanR.includes('excel')) return 'Xuất Excel Danh mục DV';
       if (cleanR.includes('canh-bao')) return 'Cảnh Báo Đơn Vị';
-      if (cleanR.includes('tao-nhan-vien')) return 'Tạo nhanh NV & TK';
+      if (cleanR.includes('tao-nhan-vien')) {
+        const unitName = getCurrentUnitName(tab);
+        return unitName ? `Tạo nhanh NV & TK - ${unitName}` : 'Tạo nhanh NV & TK';
+      }
       if (cleanR === '/new/his/chon-khoaphong') return 'Chọn khoa phòng';
       if (cleanR === '/new/his/dang-nhap') return 'Login gốc';
 
@@ -2517,12 +2520,17 @@
         tab.type = 'his';
       }
 
-      // Cập nhật title của tab theo tên phân hệ (kèm tên đơn vị cho Cấu hình Liên thông)
+      // Cập nhật title của tab theo tên phân hệ (kèm tên đơn vị cho Cấu hình Liên thông và Tạo nhanh NV & TK)
       let modName = explicitName || getModuleNameByRoute(newRoute, tab);
       if (newRoute.includes('lien-thong')) {
         const unitName = getCurrentUnitName(tab);
         if (unitName) {
           modName = `Cấu hình Liên thông - ${unitName}`;
+        }
+      } else if (newRoute.includes('tao-nhan-vien')) {
+        const unitName = getCurrentUnitName(tab);
+        if (unitName) {
+          modName = `Tạo nhanh NV & TK - ${unitName}`;
         }
       }
       if (modName) {
@@ -2694,16 +2702,26 @@
       iframe.allow = 'clipboard-read; clipboard-write; fullscreen';
 
       if (route === '/lien-thong-ksk' || route.startsWith('/lien-thong-ksk')) {
-        const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
-        iframe.src = `/lien-thong-ksk${tokenQuery}`;
+        const activeTab = tabs.find(t => t.id === tabId) || tabs.find(t => t.id === activeTabId);
+        const unitName = activeTab ? (activeTab.account?.companyName || getCurrentUnitName(activeTab)) : getCurrentUnitName(null);
+        const params = new URLSearchParams();
+        if (token) params.set('token', token);
+        if (unitName) params.set('unitName', unitName);
+        const qs = params.toString() ? `?${params.toString()}` : '';
+        iframe.src = `/lien-thong-ksk${qs}`;
       } else if (route === '/excel-tool' || route.startsWith('/excel-tool')) {
         iframe.src = '/excel-tool';
       } else if (route === '/canh-bao' || route.startsWith('/canh-bao')) {
         const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
         iframe.src = `/canh-bao${tokenQuery}`;
       } else if (route === '/tao-nhan-vien' || route.startsWith('/tao-nhan-vien')) {
-        const tokenQuery = token ? `?token=${encodeURIComponent(token)}` : '';
-        iframe.src = `/tao-nhan-vien${tokenQuery}`;
+        const activeTab = tabs.find(t => t.id === tabId) || tabs.find(t => t.id === activeTabId);
+        const unitName = activeTab ? (activeTab.account?.companyName || getCurrentUnitName(activeTab)) : getCurrentUnitName(null);
+        const params = new URLSearchParams();
+        if (token) params.set('token', token);
+        if (unitName) params.set('unitName', unitName);
+        const qs = params.toString() ? `?${params.toString()}` : '';
+        iframe.src = `/tao-nhan-vien${qs}`;
       } else {
         // Nạp phiên làm việc qua route /init-session trên subdomain độc lập (hoặc origin hiện tại)
         const targetOrigin = getTabOrigin(subdomain);
@@ -2747,6 +2765,7 @@
 
     function broadcastTokenToToolFrames(accountObj, sessionId) {
       if (!accountObj || !accountObj.accessToken) return;
+      const unitName = accountObj.companyName || getCurrentUnitName(null);
       const iframes = frameContainer.querySelectorAll('iframe[src*="lien-thong-ksk"], iframe[src*="canh-bao"], iframe[src*="tao-nhan-vien"]');
       iframes.forEach(f => {
         try {
@@ -2754,7 +2773,8 @@
             type: 'SET_TOKEN',
             token: accountObj.accessToken,
             username: accountObj.username || '',
-            companyName: accountObj.companyName || '',
+            companyName: unitName,
+            unitName: unitName,
             fullName: accountObj.fullName || ''
           }, '*');
         } catch(e) {}
@@ -2763,10 +2783,14 @@
         if (isToolTabObj(t)) {
           t.account = { ...accountObj };
           if (sessionId) t.sid = sessionId;
-          if ((t.type === 'ksk' || t.route?.includes('lien-thong')) && !t.isCustomRenamed) {
-            const unitName = accountObj.companyName || '';
-            if (unitName) {
-              t.title = `Cấu hình Liên thông - ${unitName}`;
+          if (!t.isCustomRenamed) {
+            const uName = accountObj.companyName || getCurrentUnitName(t);
+            if (uName) {
+              if (t.type === 'ksk' || t.route?.includes('lien-thong')) {
+                t.title = `Cấu hình Liên thông - ${uName}`;
+              } else if (t.type === 'nhan-vien' || t.route?.includes('tao-nhan-vien')) {
+                t.title = `Tạo nhanh NV & TK - ${uName}`;
+              }
             }
           }
         }
@@ -2976,17 +3000,25 @@
       if (existing) {
         if (sourceAccount) {
           existing.account = { ...sourceAccount };
-          if ((existing.type === 'ksk' || existing.route?.includes('lien-thong')) && !existing.isCustomRenamed) {
-            const unitName = sourceAccount.companyName || getCurrentUnitName(existing);
-            if (unitName) {
+        }
+        if (!existing.isCustomRenamed) {
+          const unitName = sourceAccount?.companyName || getCurrentUnitName(existing);
+          if (unitName) {
+            if (existing.type === 'ksk' || existing.route?.includes('lien-thong')) {
               existing.title = `Cấu hình Liên thông - ${unitName}`;
+            } else if (existing.type === 'nhan-vien' || existing.route?.includes('tao-nhan-vien')) {
+              existing.title = `Tạo nhanh NV & TK - ${unitName}`;
             }
           }
         }
         switchTab(existing.id);
         const iframe = document.getElementById('frame-' + existing.id);
         if (iframe) {
-          const tQuery = bestTok ? `?token=${encodeURIComponent(bestTok)}` : '';
+          const uName = sourceAccount?.companyName || getCurrentUnitName(existing);
+          const params = new URLSearchParams();
+          if (bestTok) params.set('token', bestTok);
+          if (uName) params.set('unitName', uName);
+          const tQuery = params.toString() ? `?${params.toString()}` : '';
           const targetSrc = `${route}${tQuery}`;
           if (!iframe.src || !iframe.src.includes(route)) {
             iframe.src = targetSrc;
@@ -2996,7 +3028,8 @@
                 type: 'SET_TOKEN',
                 token: bestTok,
                 username: sourceAccount?.username || '',
-                companyName: sourceAccount?.companyName || '',
+                companyName: uName,
+                unitName: uName,
                 fullName: sourceAccount?.fullName || ''
               }, '*');
             } catch(e) {}
@@ -3013,9 +3046,15 @@
       const newTabId = idPrefix + Date.now();
       const subdomain = 't' + tabCounter;
       let finalTitle = title;
-      if ((type === 'ksk' || route?.includes('lien-thong')) && !finalTitle.includes(' - ')) {
+      if (!finalTitle.includes(' - ')) {
         const u = sourceAccount?.companyName || getCurrentUnitName(currentActive);
-        if (u) finalTitle = `Cấu hình Liên thông - ${u}`;
+        if (u) {
+          if (type === 'ksk' || route?.includes('lien-thong')) {
+            finalTitle = `Cấu hình Liên thông - ${u}`;
+          } else if (type === 'nhan-vien' || route?.includes('tao-nhan-vien')) {
+            finalTitle = `Tạo nhanh NV & TK - ${u}`;
+          }
+        }
       }
       const newTab = {
         id: newTabId,
@@ -3119,11 +3158,15 @@
 
     // Mở Tab riêng cho Tạo nhanh Nhân viên & Người dùng
     function openNhanVienTab() {
+      const currentActive = tabs.find(t => t.id === activeTabId);
+      const unitName = getCurrentUnitName(currentActive);
+      const tabTitle = unitName ? `Tạo nhanh NV & TK - ${unitName}` : 'Tạo nhanh NV & TK';
+
       openTokenToolTab({
         type: 'nhan-vien',
         idPrefix: 'tab_nhanvien_',
         route: '/tao-nhan-vien',
-        title: '👤 Tạo nhanh NV & TK',
+        title: tabTitle,
         toastExisting: 'Đã chuyển sang Tab Tạo nhanh Nhân viên & Tài khoản.',
         toastCreated: 'Đã mở Tab Tạo nhanh Nhân viên & Tài khoản!'
       });

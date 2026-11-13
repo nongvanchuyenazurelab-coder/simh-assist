@@ -1286,7 +1286,16 @@
         const tokenChanged = clean !== state.token;
         state.token = clean;
         state.jwtPayload = clean ? parseJwtPayload(clean) : null;
-        if (meta.companyName !== undefined) state.parentCompanyName = meta.companyName || '';
+        const incomingUnit = meta.companyName || meta.unitName || '';
+        if (incomingUnit) {
+          state.parentCompanyName = incomingUnit;
+        } else if (!state.parentCompanyName) {
+          try {
+            const info = JSON.parse(localStorage.getItem('jhi-info') || '{}');
+            if (info.companyName) state.parentCompanyName = info.companyName;
+            else if (info.hospitalName) state.parentCompanyName = info.hospitalName;
+          } catch(e) {}
+        }
         if (meta.fullName !== undefined) state.parentFullName = meta.fullName || '';
         els.tokenInput.value = clean;
 
@@ -1298,9 +1307,28 @@
         }
 
         updateUnitPills();
+        notifyParentNhanVienUrl();
         if (clean && tokenChanged) {
           loadOfficersList(true);
         }
+      }
+
+      function notifyParentNhanVienUrl() {
+        try {
+          if (window.parent && window.parent !== window) {
+            const uName = state.parentCompanyName || '';
+            window.parent.postMessage({
+              type: 'YTCS_URL_CHANGED',
+              tabId: window.name || '',
+              url: window.location.href,
+              pathname: window.location.pathname,
+              search: window.location.search || '',
+              hash: window.location.hash || '',
+              unitName: uName,
+              title: uName ? `Tạo nhanh NV & TK - ${uName}` : 'Tạo nhanh NV & TK'
+            }, '*');
+          }
+        } catch(e) {}
       }
 
       function getAuthHeaders(extra = {}) {
@@ -1875,11 +1903,21 @@
         applyDefaultsToUI(DEFAULTS_CONFIG);
         const params = new URLSearchParams(window.location.search);
         const qToken = params.get('token');
-        const qUnit = params.get('unit') || '';
+        const qUnit = params.get('unitName') || params.get('companyName') || params.get('unit') || '';
         if (qToken) {
           setToken(qToken, { companyName: qUnit });
         } else {
+          if (qUnit) {
+            state.parentCompanyName = qUnit;
+          } else {
+            try {
+              const info = JSON.parse(localStorage.getItem('jhi-info') || '{}');
+              if (info.companyName) state.parentCompanyName = info.companyName;
+              else if (info.hospitalName) state.parentCompanyName = info.hospitalName;
+            } catch(e) {}
+          }
           updateUnitPills();
+          notifyParentNhanVienUrl();
         }
       })();
     })(typeof window !== 'undefined' ? window : globalThis);
