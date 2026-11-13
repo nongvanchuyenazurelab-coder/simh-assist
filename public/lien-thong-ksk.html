@@ -2402,6 +2402,8 @@
     function notifyParentKskUrl() {
       try {
         if (window.parent && window.parent !== window) {
+          const unitEl = document.getElementById('headerSyncUnitName');
+          const uName = (unitEl ? unitEl.innerText : '').trim();
           window.parent.postMessage({
             type: 'YTCS_URL_CHANGED',
             tabId: window.name || '',
@@ -2409,7 +2411,8 @@
             pathname: window.location.pathname,
             search: window.location.search || '',
             hash: window.location.hash || '',
-            title: document.title || 'Cấu Hình Liên Thông'
+            unitName: uName,
+            title: uName ? `Cấu hình Liên thông - ${uName}` : (document.title || 'Cấu Hình Liên Thông')
           }, '*');
         }
       } catch(e) {}
@@ -2861,6 +2864,7 @@
             }
             const unitEl = document.getElementById('headerSyncUnitName');
             if (unitEl && uName) unitEl.innerText = uName;
+            notifyParentKskUrl();
           } catch(e) {}
 
           if (payload.exp) {
@@ -2936,6 +2940,7 @@
           const uName = foundAccount.company?.name || foundAccount.fullName || '';
           const unitEl = document.getElementById('headerSyncUnitName');
           if (unitEl && uName) unitEl.innerText = uName;
+          notifyParentKskUrl();
         }
         if (isManual) {
           showAlert('Đã nạp phiên', 'Đã đồng bộ phiên làm việc từ Header quản trị.', 'success');
