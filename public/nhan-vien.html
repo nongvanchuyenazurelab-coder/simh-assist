@@ -543,6 +543,7 @@
           <div class="mode-tabs">
             <button type="button" class="mode-tab active" id="tabModeSingle">Tạo 1 nhân viên</button>
             <button type="button" class="mode-tab" id="tabModeBatch">Tạo hàng loạt</button>
+            <button type="button" class="mode-tab" id="tabModeEnableHis" style="color:#059669; font-weight:700;">⚡ Bật Enable User (HIS Thái Nguyên)</button>
           </div>
         </div>
 
@@ -632,6 +633,101 @@
                     </tr>
                   </thead>
                   <tbody id="batchPreviewBody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ENABLE USER HIS THAI NGUYEN PANEL -->
+          <div id="panelEnableHis" class="hidden">
+            <!-- HIS Connection Status Strip -->
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#ecfdf5; border:1px solid #a7f3d0; border-radius:8px; padding:10px 14px; margin-bottom:14px; flex-wrap:wrap; gap:8px;">
+              <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:18px;">🏥</span>
+                <div>
+                  <div style="font-weight:700; color:#065f46; font-size:13px;">
+                    VNPT HIS Thái Nguyên: <span id="hisTnStatusText" style="color:#047857;">🟢 Đang kết nối ADMIN_IT</span>
+                  </div>
+                  <div style="font-size:11px; color:#059669;">Hệ thống tự động đồng bộ &amp; kích hoạt tài khoản qua API ngầm (https://yte-thainguyen.vnpthis.vn)</div>
+                </div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <button type="button" id="btnHisTnRelogin" class="btn btn-outline btn-sm" style="background:#fff; border-color:#a7f3d0; color:#065f46; font-size:11px; font-weight:600;">🔄 Làm mới phiên</button>
+              </div>
+            </div>
+
+            <!-- Sub-mode selector -->
+            <div style="display:flex; gap:18px; margin-bottom:12px; align-items:center; background:#f8fafc; border:1px solid var(--border); padding:8px 12px; border-radius:6px;">
+              <strong style="font-size:12px; color:var(--muted);">Hình thức kích hoạt:</strong>
+              <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:600;">
+                <input type="radio" name="hisEnableSubMode" value="single" checked id="radioHisSingle"> 1 Tài khoản đơn lẻ
+              </label>
+              <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; font-weight:600;">
+                <input type="radio" name="hisEnableSubMode" value="batch" id="radioHisBatch"> Hàng loạt (Theo danh sách)
+              </label>
+            </div>
+
+            <!-- Single Mode Inputs -->
+            <div id="hisSingleForm">
+              <div class="form-grid">
+                <div class="field">
+                  <label for="inputHisMaDonVi">
+                    <span>Mã đơn vị HIS <span class="req">*</span></span>
+                    <span class="hint">Ví dụ: 19208 (Điểm trạm Tân Cương 2)</span>
+                  </label>
+                  <input type="text" id="inputHisMaDonVi" class="input mono" placeholder="19208" value="19208">
+                </div>
+                <div class="field">
+                  <label for="inputHisUsername">
+                    <span>Tên đăng nhập (User / Số CMT) <span class="req">*</span></span>
+                    <span class="hint">Ví dụ: scmadinhhuy</span>
+                  </label>
+                  <input type="text" id="inputHisUsername" class="input mono" placeholder="scmadinhhuy" value="scmadinhhuy">
+                </div>
+              </div>
+            </div>
+
+            <!-- Batch Mode Inputs -->
+            <div id="hisBatchForm" class="hidden">
+              <div class="field">
+                <label for="hisBatchTextarea">
+                  <span>Danh sách tài khoản cần kích hoạt <span class="req">*</span></span>
+                  <span class="hint">Hỗ trợ dán từ Excel hoặc nhập dạng: <code>MãĐơnVị,Username</code> (mỗi dòng 1 người)</span>
+                </label>
+                <textarea id="hisBatchTextarea" class="textarea mono" rows="6" placeholder="19208,scmadinhhuy&#10;19208,scphuongthibe&#10;19209,scnguyenvana"></textarea>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display:flex; gap:10px; align-items:center; margin-top:14px; margin-bottom:14px;">
+              <button type="button" class="btn btn-primary" id="btnExecuteHisEnable" style="background: linear-gradient(135deg, #059669, #0d9488); border:none; box-shadow:0 2px 6px rgba(5,150,105,0.25); font-weight:700;">
+                ⚡ Bắt đầu Kích Hoạt &amp; Bật Enable
+              </button>
+              <button type="button" class="btn btn-outline" id="btnClearHisForm">
+                🗑️ Xóa trắng
+              </button>
+            </div>
+
+            <!-- Live Progress & Results -->
+            <div id="hisResultsWrap" class="hidden" style="margin-top:16px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="font-size:13px;" id="hisResultTitle">📋 Tiến trình &amp; Kết quả kích hoạt</strong>
+                <span id="hisProgressBadge" class="badge badge-info" style="font-size:12px;">Đang chuẩn bị...</span>
+              </div>
+              <div class="table-wrap" style="max-height:280px; overflow-y:auto; border:1px solid var(--border); border-radius:6px;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:36px; text-align:center;">#</th>
+                      <th style="width:80px;">Mã ĐV</th>
+                      <th style="width:130px;">Tài khoản</th>
+                      <th>Họ và tên</th>
+                      <th>Chức danh / Chức vụ</th>
+                      <th style="width:130px;">Trạng thái</th>
+                      <th>Chi tiết kết quả</th>
+                    </tr>
+                  </thead>
+                  <tbody id="hisResultTableBody"></tbody>
                 </table>
               </div>
             </div>
@@ -735,7 +831,7 @@
           </details>
 
           <!-- ACTION BUTTONS -->
-          <div class="actions-row">
+          <div class="actions-row" id="mainActionsRow">
             <button type="button" class="btn btn-primary" id="btnExecuteCreate">
               ⚡ Tạo Nhân Viên &amp; Người Dùng
             </button>
@@ -1183,7 +1279,26 @@
         officerCountBadge: $('officerCountBadge'),
         officerTableBody: $('officerTableBody'),
         userLookupResult: $('userLookupResult'),
-        toast: $('toast')
+        toast: $('toast'),
+
+        tabModeEnableHis: $('tabModeEnableHis'),
+        panelEnableHis: $('panelEnableHis'),
+        mainActionsRow: $('mainActionsRow'),
+        hisTnStatusText: $('hisTnStatusText'),
+        btnHisTnRelogin: $('btnHisTnRelogin'),
+        radioHisSingle: $('radioHisSingle'),
+        radioHisBatch: $('radioHisBatch'),
+        hisSingleForm: $('hisSingleForm'),
+        hisBatchForm: $('hisBatchForm'),
+        inputHisMaDonVi: $('inputHisMaDonVi'),
+        inputHisUsername: $('inputHisUsername'),
+        hisBatchTextarea: $('hisBatchTextarea'),
+        btnExecuteHisEnable: $('btnExecuteHisEnable'),
+        btnClearHisForm: $('btnClearHisForm'),
+        hisResultsWrap: $('hisResultsWrap'),
+        hisResultTitle: $('hisResultTitle'),
+        hisProgressBadge: $('hisProgressBadge'),
+        hisResultTableBody: $('hisResultTableBody')
       };
 
       let toastTimer = null;
@@ -1976,15 +2091,206 @@
       }
 
       function setMode(mode) {
-        state.mode = mode === 'batch' ? 'batch' : 'single';
-        els.tabModeSingle.classList.toggle('active', state.mode === 'single');
-        els.tabModeBatch.classList.toggle('active', state.mode === 'batch');
-        els.panelSingle.classList.toggle('hidden', state.mode !== 'single');
-        els.panelBatch.classList.toggle('hidden', state.mode !== 'batch');
-        els.btnExecuteCreate.textContent = state.mode === 'batch'
-          ? '⚡ Chạy Tạo Hàng Loạt (Bước 1 ➔ Bước 2)'
-          : '⚡ Tạo Nhân Viên & Người Dùng';
-        if (state.mode === 'batch') els.btnRetryStep2.classList.add('hidden');
+        state.mode = mode;
+        const isEnableHis = (mode === 'enable-his');
+        const isBatch = (mode === 'batch');
+        const isSingle = (mode === 'single');
+
+        els.tabModeSingle.classList.toggle('active', isSingle);
+        els.tabModeBatch.classList.toggle('active', isBatch);
+        if (els.tabModeEnableHis) els.tabModeEnableHis.classList.toggle('active', isEnableHis);
+
+        els.panelSingle.classList.toggle('hidden', !isSingle);
+        els.panelBatch.classList.toggle('hidden', !isBatch);
+        if (els.panelEnableHis) els.panelEnableHis.classList.toggle('hidden', !isEnableHis);
+
+        if (els.defaultsDetails) els.defaultsDetails.classList.toggle('hidden', isEnableHis);
+        if (els.mainActionsRow) els.mainActionsRow.classList.toggle('hidden', isEnableHis);
+        if (els.pipelineArea) els.pipelineArea.classList.toggle('hidden', isEnableHis);
+
+        if (isEnableHis) {
+          checkHisTnStatus();
+        } else {
+          els.btnExecuteCreate.textContent = isBatch
+            ? '⚡ Chạy Tạo Hàng Loạt (Bước 1 ➔ Bước 2)'
+            : '⚡ Tạo Nhân Viên & Người Dùng';
+          if (isBatch) els.btnRetryStep2.classList.add('hidden');
+        }
+      }
+
+      // ===== HIS THÁI NGUYÊN HANDLERS =====
+      async function checkHisTnStatus() {
+        if (!els.hisTnStatusText) return;
+        try {
+          const res = await fetch('/_mgr/his-tn/status');
+          const data = await res.json();
+          if (data && data.loggedIn) {
+            els.hisTnStatusText.innerHTML = `🟢 Đã kết nối: <strong>${escapeHtml(data.user || 'ADMIN_IT')}</strong>`;
+            els.hisTnStatusText.style.color = '#047857';
+          } else {
+            els.hisTnStatusText.innerHTML = `🟡 Đang tự động kết nối (ADMIN_IT)...`;
+            els.hisTnStatusText.style.color = '#d97706';
+            reloginHisTn(true);
+          }
+        } catch (e) {
+          els.hisTnStatusText.innerHTML = `⚠️ Lỗi kiểm tra: ${escapeHtml(e.message)}`;
+          els.hisTnStatusText.style.color = '#dc2626';
+        }
+      }
+
+      async function reloginHisTn(silent = false) {
+        if (els.btnHisTnRelogin) els.btnHisTnRelogin.disabled = true;
+        if (!silent && els.hisTnStatusText) {
+          els.hisTnStatusText.innerHTML = `⏳ Đang kết nối lại HIS Thái Nguyên...`;
+        }
+        try {
+          const res = await fetch('/_mgr/his-tn/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: 'ADMIN_IT', password: 'Hmis@@2026' })
+          });
+          const data = await res.json();
+          if (data && data.ok) {
+            if (els.hisTnStatusText) {
+              els.hisTnStatusText.innerHTML = `🟢 Đã kết nối: <strong>${escapeHtml(data.user || 'ADMIN_IT')}</strong>`;
+              els.hisTnStatusText.style.color = '#047857';
+            }
+            if (!silent) showToast('Đã làm mới phiên VNPT HIS Thái Nguyên thành công!', 'success');
+          } else {
+            throw new Error(data?.message || 'Đăng nhập không thành công');
+          }
+        } catch (err) {
+          if (els.hisTnStatusText) {
+            els.hisTnStatusText.innerHTML = `🔴 Chưa kết nối: ${escapeHtml(err.message)}`;
+            els.hisTnStatusText.style.color = '#dc2626';
+          }
+          if (!silent) showToast('Lỗi đăng nhập: ' + err.message, 'error');
+        } finally {
+          if (els.btnHisTnRelogin) els.btnHisTnRelogin.disabled = false;
+        }
+      }
+
+      function parseHisBatchLines(text) {
+        if (!text) return [];
+        const lines = text.split(/\r?\n/);
+        const items = [];
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed) continue;
+          let parts = [];
+          if (trimmed.includes('\t')) parts = trimmed.split('\t');
+          else if (trimmed.includes(',')) parts = trimmed.split(',');
+          else if (trimmed.includes('|')) parts = trimmed.split('|');
+          else parts = trimmed.split(/\s+/);
+
+          const madonvi = (parts[0] || '').trim();
+          const username = (parts[1] || '').trim();
+          if (madonvi && username) {
+            items.push({ madonvi, username });
+          }
+        }
+        return items;
+      }
+
+      async function handleExecuteHisEnable() {
+        if (state.isBusy) return;
+
+        let items = [];
+        const isBatch = els.radioHisBatch && els.radioHisBatch.checked;
+
+        if (isBatch) {
+          items = parseHisBatchLines(els.hisBatchTextarea.value);
+          if (items.length === 0) {
+            showToast('Vui lòng nhập ít nhất 1 dòng định dạng: MãĐơnVị,Username', 'warning');
+            return;
+          }
+        } else {
+          const madonvi = (els.inputHisMaDonVi.value || '').trim();
+          const username = (els.inputHisUsername.value || '').trim();
+          if (!madonvi || !username) {
+            showToast('Vui lòng nhập đầy đủ Mã đơn vị và Tên đăng nhập!', 'warning');
+            return;
+          }
+          items = [{ madonvi, username }];
+        }
+
+        setBusy(true);
+        els.btnExecuteHisEnable.disabled = true;
+        els.hisResultsWrap.classList.remove('hidden');
+        els.hisProgressBadge.className = 'badge badge-info';
+        els.hisProgressBadge.textContent = `Đang xử lý 0/${items.length}...`;
+
+        // Render bảng trống sẵn
+        els.hisResultTableBody.innerHTML = items.map((it, idx) => `
+          <tr id="his-row-${idx}">
+            <td style="text-align:center;">${idx + 1}</td>
+            <td class="mono"><strong>${escapeHtml(it.madonvi)}</strong></td>
+            <td class="mono"><code>${escapeHtml(it.username)}</code></td>
+            <td style="color:var(--muted)">Đang tìm...</td>
+            <td style="color:var(--muted)">—</td>
+            <td><span class="badge badge-info">Đang gọi API...</span></td>
+            <td style="font-size:11px;color:var(--muted)">Chờ xử lý</td>
+          </tr>
+        `).join('');
+
+        try {
+          const res = await fetch('/_mgr/his-tn/enable-users', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items })
+          });
+
+          const data = await res.json();
+          if (!data || !data.ok) {
+            throw new Error(data?.message || 'Lỗi xử lý API từ máy chủ');
+          }
+
+          const results = data.results || [];
+          let successCnt = 0;
+          let alreadyCnt = 0;
+          let errCnt = 0;
+
+          results.forEach((r, idx) => {
+            const tr = document.getElementById(`his-row-${idx}`);
+            let badgeHtml = '';
+            if (r.status === 'SUCCESS') {
+              successCnt++;
+              badgeHtml = '<span class="badge badge-ok" style="background:#ecfdf5;border-color:#a7f3d0;color:#065f46;">Đã bật Enable ✔️</span>';
+            } else if (r.status === 'ALREADY_ENABLED') {
+              alreadyCnt++;
+              badgeHtml = '<span class="badge" style="background:#f0fdfa;border-color:#99f6e4;color:#0f766e;">Đã kích hoạt sẵn ℹ️</span>';
+            } else if (r.status === 'NOT_FOUND') {
+              errCnt++;
+              badgeHtml = '<span class="badge badge-err">Không tìm thấy ❌</span>';
+            } else {
+              errCnt++;
+              badgeHtml = '<span class="badge badge-err">Lỗi ⚠️</span>';
+            }
+
+            if (tr) {
+              tr.innerHTML = `
+                <td style="text-align:center;">${idx + 1}</td>
+                <td class="mono"><strong>${escapeHtml(r.madonvi)}</strong></td>
+                <td class="mono"><code>${escapeHtml(r.username)}</code></td>
+                <td><strong>${escapeHtml(r.fullName || '—')}</strong></td>
+                <td style="font-size:11px;">${escapeHtml(r.chucVu || '')} ${r.chucDanh ? '(' + escapeHtml(r.chucDanh) + ')' : ''}</td>
+                <td>${badgeHtml}</td>
+                <td style="font-size:11px;">${escapeHtml(r.message || '')}</td>
+              `;
+            }
+          });
+
+          els.hisProgressBadge.className = errCnt === 0 ? 'badge badge-ok' : 'badge badge-err';
+          els.hisProgressBadge.textContent = `Hoàn tất ${items.length} tài khoản (Bật mới: ${successCnt}, Có sẵn: ${alreadyCnt}, Lỗi: ${errCnt})`;
+          showToast(`Kích hoạt xong: ${successCnt} bật mới, ${alreadyCnt} có sẵn, ${errCnt} lỗi.`, errCnt === 0 ? 'success' : 'warning');
+        } catch (err) {
+          els.hisProgressBadge.className = 'badge badge-err';
+          els.hisProgressBadge.textContent = 'Thất bại: ' + err.message;
+          showToast('Lỗi: ' + err.message, 'error');
+        } finally {
+          setBusy(false);
+          els.btnExecuteHisEnable.disabled = false;
+        }
       }
 
       // ===== EVENTS =====
@@ -2005,6 +2311,39 @@
 
       els.tabModeSingle.addEventListener('click', () => setMode('single'));
       els.tabModeBatch.addEventListener('click', () => setMode('batch'));
+      if (els.tabModeEnableHis) {
+        els.tabModeEnableHis.addEventListener('click', () => setMode('enable-his'));
+      }
+
+      if (els.btnHisTnRelogin) {
+        els.btnHisTnRelogin.addEventListener('click', () => reloginHisTn(false));
+      }
+
+      if (els.radioHisSingle && els.radioHisBatch) {
+        els.radioHisSingle.addEventListener('change', () => {
+          if (els.hisSingleForm) els.hisSingleForm.classList.remove('hidden');
+          if (els.hisBatchForm) els.hisBatchForm.classList.add('hidden');
+        });
+        els.radioHisBatch.addEventListener('change', () => {
+          if (els.hisSingleForm) els.hisSingleForm.classList.add('hidden');
+          if (els.hisBatchForm) els.hisBatchForm.classList.remove('hidden');
+        });
+      }
+
+      if (els.btnExecuteHisEnable) {
+        els.btnExecuteHisEnable.addEventListener('click', handleExecuteHisEnable);
+      }
+
+      if (els.btnClearHisForm) {
+        els.btnClearHisForm.addEventListener('click', () => {
+          if (els.inputHisMaDonVi) els.inputHisMaDonVi.value = '';
+          if (els.inputHisUsername) els.inputHisUsername.value = '';
+          if (els.hisBatchTextarea) els.hisBatchTextarea.value = '';
+          if (els.hisResultsWrap) els.hisResultsWrap.classList.add('hidden');
+          if (els.hisResultTableBody) els.hisResultTableBody.innerHTML = '';
+          showToast('Đã xóa trắng form kích hoạt.', 'info');
+        });
+      }
 
       els.inputOfficerCode.addEventListener('input', updateAccountPreview);
       els.batchTextarea.addEventListener('input', renderBatchPreview);

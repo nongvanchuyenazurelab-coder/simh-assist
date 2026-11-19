@@ -629,6 +629,61 @@
       color: #ef4444;
     }
 
+    .frame-nav-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      margin-right: 6px;
+      padding-bottom: 3px;
+      flex-shrink: 0;
+    }
+
+    .frame-nav-group.bottom-nav-group {
+      padding-bottom: 0;
+      margin-right: 4px;
+    }
+
+    .btn-frame-nav {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: #334155;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, color 0.15s, opacity 0.15s;
+      padding: 0;
+      flex-shrink: 0;
+    }
+
+    .btn-frame-nav:hover:not(:disabled) {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+
+    .btn-frame-nav:active:not(:disabled) {
+      background: #cbd5e1;
+    }
+
+    .btn-frame-nav:disabled {
+      opacity: 0.32;
+      cursor: default;
+      pointer-events: none;
+    }
+
+    .btn-frame-nav svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2.1;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
     .tabbar-actions {
       display: flex;
       align-items: center;
@@ -1381,6 +1436,19 @@
 
     <!-- 2. Thanh In-App Tab Bar (Chrome/Edge Style) -->
     <nav id="tab-bar-container">
+      <!-- Nút điều hướng Frame: Back / Forward / Reload -->
+      <div class="frame-nav-group" id="tabbar-nav-group">
+        <button type="button" id="btn-frame-back" class="btn-frame-nav" title="Quay lại trang trước trong Frame (Alt + ←)" disabled>
+          <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        </button>
+        <button type="button" id="btn-frame-forward" class="btn-frame-nav" title="Đi tới trang sau trong Frame (Alt + →)" disabled>
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+        </button>
+        <button type="button" id="btn-frame-reload" class="btn-frame-nav" title="Tải lại Frame hiện tại">
+          <svg viewBox="0 0 24 24"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></svg>
+        </button>
+      </div>
+
       <div id="tabs-list">
         <!-- Render động danh sách các Tab ở đây -->
       </div>
@@ -1421,6 +1489,14 @@
     <!-- 4. Thanh hiển thị link Frame ở đáy trang (Bottom Bar) -->
     <footer id="bottom-bar">
       <div class="bottom-left">
+        <div class="frame-nav-group bottom-nav-group">
+          <button type="button" id="btn-bottom-back" class="btn-frame-nav" title="Quay lại trang trước trong Frame (Alt + ←)" disabled>
+            <svg viewBox="0 0 24 24"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+          </button>
+          <button type="button" id="btn-bottom-forward" class="btn-frame-nav" title="Đi tới trang sau trong Frame (Alt + →)" disabled>
+            <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+          </button>
+        </div>
         <span class="bottom-tag" id="bottom-tab-badge" title="Tên Tab và phiên làm việc hiện tại">
           🏥 <span id="bottom-tab-title">Tab 1</span>
         </span>
@@ -2498,15 +2574,40 @@
       return '';
     }
 
+    function getToolTypeByRoute(route) {
+      if (!route || typeof route !== 'string') return 'his';
+      let cleanR = route.trim();
+      try {
+        if (/^https?:\/\//i.test(cleanR)) {
+          cleanR = new URL(cleanR).pathname;
+        }
+      } catch (e) {}
+      cleanR = cleanR.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
+
+      // Chỉ khớp ĐÚNG các route công cụ nội bộ của YTCS Manager (tránh khớp nhầm /new/his/.../lien-thong-dl-ncd)
+      if (cleanR === '/lien-thong-ksk' || cleanR === '/lien-thong-ksk.html') return 'ksk';
+      if (cleanR === '/excel-tool' || cleanR === '/excel-tool.html' || cleanR === '/vnpt-his-excel-tool') return 'excel';
+      if (cleanR === '/canh-bao' || cleanR === '/canh-bao.html') return 'canh-bao';
+      if (cleanR === '/tao-nhan-vien' || cleanR === '/tao-nhan-vien.html') return 'nhan-vien';
+      return 'his';
+    }
+
     function getModuleNameByRoute(route, tab) {
       if (!route) return '';
-      const cleanR = route.split('?')[0].split('#')[0];
+      let cleanR = route.trim();
+      try {
+        if (/^https?:\/\//i.test(cleanR)) {
+          cleanR = new URL(cleanR).pathname;
+        }
+      } catch (e) {}
+      cleanR = cleanR.split('?')[0].split('#')[0].replace(/\/+$/, '') || '/';
 
-      // 1. Tool routes đặc biệt
-      if (cleanR.includes('lien-thong')) return 'Cấu hình Liên thông';
-      if (cleanR.includes('excel')) return 'Xuất Excel Danh mục DV';
-      if (cleanR.includes('canh-bao')) return 'Cảnh Báo Đơn Vị';
-      if (cleanR.includes('tao-nhan-vien')) return 'Tạo nhanh NV & TK';
+      // 1. Tool routes nội bộ đặc biệt (khớp chính xác, không dùng .includes() để tránh đụng route HIS)
+      const toolType = getToolTypeByRoute(cleanR);
+      if (toolType === 'ksk') return 'Cấu hình Liên thông';
+      if (toolType === 'excel') return 'Xuất Excel Danh mục DV';
+      if (toolType === 'canh-bao') return 'Cảnh Báo Đơn Vị';
+      if (toolType === 'nhan-vien') return 'Tạo nhanh NV & TK';
       if (cleanR === '/new/his/chon-khoaphong') return 'Chọn khoa phòng';
       if (cleanR === '/new/his/dang-nhap') return 'Login gốc';
 
@@ -2534,6 +2635,10 @@
       }
 
       // 4. Các route phổ biến thường gặp của VNPT HIS
+      if (cleanR.includes('/lien-thong-dl-ncd')) return 'Đẩy dữ liệu NCD';
+      if (cleanR.includes('/xuat-file-bao-hiem')) return 'Xuất file bảo hiểm';
+      if (cleanR.includes('/bao-cao/xem-bao-cao')) return 'Xem báo cáo';
+      if (cleanR.includes('/bao-cao/quan-ly-bao-cao')) return 'Quản lý báo cáo';
       if (cleanR.includes('/ngoaitru/kb') || cleanR.includes('/ds-khambenh')) return 'Khám Ngoại trú';
       if (cleanR.includes('/ngoaitru/tnkb') || cleanR.includes('/tiepnhan')) return 'Tiếp nhận ngoại trú';
       if (cleanR.includes('/duoc/duyet-phat-thuoc')) return 'Duyệt phát thuốc';
@@ -2541,6 +2646,7 @@
       if (cleanR.includes('/vien-phi')) return 'Quản lý Viện phí';
       if (cleanR.includes('/noitru')) return 'Điều trị Nội trú';
       if (cleanR.includes('/cls') || cleanR.includes('/canlamsang')) return 'Cận lâm sàng';
+      if (cleanR.includes('/danhmuc/')) return 'Danh mục hệ thống';
 
       return '';
     }
@@ -2549,18 +2655,8 @@
       if (!tab || !newRoute) return;
       tab.route = newRoute;
 
-      // Cập nhật type tương ứng để đồng bộ tabIcon
-      if (newRoute.includes('canh-bao')) {
-        tab.type = 'canh-bao';
-      } else if (newRoute.includes('lien-thong')) {
-        tab.type = 'ksk';
-      } else if (newRoute.includes('excel')) {
-        tab.type = 'excel';
-      } else if (newRoute.includes('tao-nhan-vien')) {
-        tab.type = 'nhan-vien';
-      } else {
-        tab.type = 'his';
-      }
+      // Cập nhật type tương ứng theo khớp chính xác route công cụ
+      tab.type = getToolTypeByRoute(newRoute);
 
       // Cập nhật title của tab theo tên phân hệ
       let modName = explicitName || getModuleNameByRoute(newRoute, tab);
@@ -2576,21 +2672,22 @@
         item.className = 'tab-item' + (tab.id === activeTabId ? ' active' : '');
         item.dataset.tabId = tab.id;
 
-        const tabIcon = tab.type === 'canh-bao' || tab.route?.includes('canh-bao') ? '⚠️' :
-                        tab.type === 'ksk' || tab.route?.includes('lien-thong') ? '🛠️' :
-                        tab.type === 'excel' || tab.route?.includes('excel') ? '📊' :
-                        tab.type === 'nhan-vien' || tab.route?.includes('tao-nhan-vien') ? '👤' : '🏥';
+        const effectiveType = tab.route ? getToolTypeByRoute(tab.route) : (tab.type || 'his');
+        const tabIcon = effectiveType === 'canh-bao' ? '⚠️' :
+                        effectiveType === 'ksk' ? '🛠️' :
+                        effectiveType === 'excel' ? '📊' :
+                        effectiveType === 'nhan-vien' ? '👤' : '🏥';
 
         let cleanDisplayTitle = (tab.title || '').replace(/^[⚡🛠️📊⚠️👤🏥⚙️]\s*/, '').trim() || 'Tab';
         // Đảm bảo tab công cụ cố định tên chuẩn, không bị dính tên đơn vị cũ/nhầm lẫn
         if (!tab.isCustomRenamed) {
-          if (tab.type === 'ksk' || tab.route?.includes('lien-thong')) {
+          if (effectiveType === 'ksk') {
             cleanDisplayTitle = 'Cấu hình Liên thông';
-          } else if (tab.type === 'nhan-vien' || tab.route?.includes('tao-nhan-vien')) {
+          } else if (effectiveType === 'nhan-vien') {
             cleanDisplayTitle = 'Tạo nhanh NV & TK';
-          } else if (tab.type === 'canh-bao' || tab.route?.includes('canh-bao')) {
+          } else if (effectiveType === 'canh-bao') {
             cleanDisplayTitle = 'Cảnh Báo Đơn Vị';
-          } else if (tab.type === 'excel' || tab.route?.includes('excel')) {
+          } else if (effectiveType === 'excel') {
             cleanDisplayTitle = 'Xuất Excel Danh mục DV';
           }
         }
@@ -3364,6 +3461,7 @@
           const cleanSearch = (search || '').replace(/([?&])_v=\d+(&|$)/, '$1').replace(/[?&]$/, '');
           const fullRoute = cleanPath + (cleanSearch || '') + (hash || '');
           matchedTab.route = fullRoute;
+          recordTabHistory(matchedTab, fullRoute);
 
           // Tạo URL hiển thị chuẩn https://ytcs.hmis.vn cho frame HIS
           let displayUrl = '';
@@ -3415,10 +3513,7 @@
             const detectedName = getModuleNameByRoute(fullRoute, matchedTab) || 
               (matchedTab.pageTitle ? matchedTab.pageTitle.replace(/^VNPT HIS\s*[-–]\s*/i, '').trim() : '');
             
-            const newType = fullRoute.includes('canh-bao') ? 'canh-bao' :
-                            fullRoute.includes('lien-thong') ? 'ksk' :
-                            fullRoute.includes('excel') ? 'excel' :
-                            fullRoute.includes('tao-nhan-vien') ? 'nhan-vien' : 'his';
+            const newType = getToolTypeByRoute(fullRoute);
 
             let needReRender = false;
             if (matchedTab.type !== newType) {
@@ -3439,7 +3534,10 @@
 
     function updateBottomUrlBar() {
       const activeTab = tabs.find(t => t.id === activeTabId);
-      if (!activeTab) return;
+      if (!activeTab) {
+        updateFrameNavButtons();
+        return;
+      }
 
       if (bottomTabTitle) {
         const displayTitle = activeTab.pageTitle || activeTab.title || `Tab ${activeTab.subdomain || ''}`;
@@ -3450,7 +3548,202 @@
         bottomFrameUrl.value = url;
         bottomFrameUrl.title = `Đường dẫn gốc YTCS: ${url} (Nhấn Enter hoặc nút "Đi tới" để chuyển trang)`;
       }
+      updateFrameNavButtons();
     }
+
+    // =========================================================================
+    // QUẢN LÝ LỊCH SỬ ĐIỀU HƯỚNG ĐỘC LẬP CHO TỪNG FRAME (BACKWARD / FORWARD)
+    // =========================================================================
+    const btnFrameBack = document.getElementById('btn-frame-back');
+    const btnFrameForward = document.getElementById('btn-frame-forward');
+    const btnFrameReload = document.getElementById('btn-frame-reload');
+    const btnBottomBack = document.getElementById('btn-bottom-back');
+    const btnBottomForward = document.getElementById('btn-bottom-forward');
+
+    function normalizeHistoryRoute(rawRoute) {
+      if (!rawRoute || typeof rawRoute !== 'string') return '';
+      let r = rawRoute.trim();
+      try {
+        if (/^https?:\/\//i.test(r)) {
+          const u = new URL(r);
+          r = u.pathname + u.search + u.hash;
+        }
+      } catch (e) {}
+      r = r.replace(/([?&])(_v|_t)=\d+(&|$)/g, '$1').replace(/[?&]$/, '');
+      if (!r || r === '/' || r.startsWith('/init-session') || r.startsWith('/_mgr/')) return '';
+      return r.startsWith('/') ? r : '/' + r;
+    }
+
+    function recordTabHistory(tab, rawRoute) {
+      if (!tab) return;
+      const cleanRoute = normalizeHistoryRoute(rawRoute);
+      if (!cleanRoute) return;
+
+      if (!Array.isArray(tab.history)) tab.history = [];
+      if (typeof tab.historyIndex !== 'number') tab.historyIndex = tab.history.length - 1;
+
+      // Nếu đây là phản hồi từ thao tác bấm Back / Forward thì không ghi đè nhánh forward
+      if (tab._navigatingToRoute) {
+        if (cleanRoute === tab._navigatingToRoute || cleanRoute.split('?')[0] === tab._navigatingToRoute.split('?')[0]) {
+          tab._navigatingToRoute = null;
+          if (tab._navTimeout) {
+            clearTimeout(tab._navTimeout);
+            tab._navTimeout = null;
+          }
+          updateFrameNavButtons();
+          return;
+        }
+      }
+
+      const currentEntry = tab.history[tab.historyIndex];
+      if (currentEntry === cleanRoute) {
+        updateFrameNavButtons();
+        return;
+      }
+
+      // Cắt bỏ các mục forward cũ khi người dùng mở một trang mới
+      if (tab.historyIndex < tab.history.length - 1) {
+        tab.history = tab.history.slice(0, tab.historyIndex + 1);
+      }
+      tab.history.push(cleanRoute);
+      if (tab.history.length > 50) {
+        tab.history.shift();
+      }
+      tab.historyIndex = tab.history.length - 1;
+      updateFrameNavButtons();
+    }
+
+    function updateFrameNavButtons() {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      const historyArr = activeTab && Array.isArray(activeTab.history) ? activeTab.history : [];
+      const idx = activeTab && typeof activeTab.historyIndex === 'number' ? activeTab.historyIndex : -1;
+
+      const canBack = Boolean(activeTab && idx > 0);
+      const canForward = Boolean(activeTab && idx >= 0 && idx < historyArr.length - 1);
+
+      const prevRoute = canBack ? historyArr[idx - 1] : '';
+      const nextRoute = canForward ? historyArr[idx + 1] : '';
+      const prevLabel = prevRoute ? (getModuleNameByRoute(prevRoute, activeTab) || prevRoute) : '';
+      const nextLabel = nextRoute ? (getModuleNameByRoute(nextRoute, activeTab) || nextRoute) : '';
+
+      const backTitle = canBack
+        ? `Quay lại: ${prevLabel} (${prevRoute}) [Alt + ←]`
+        : 'Không có trang trước đó trong Frame này';
+      const forwardTitle = canForward
+        ? `Đi tới: ${nextLabel} (${nextRoute}) [Alt + →]`
+        : 'Không có trang tiếp theo trong Frame này';
+
+      const btnsBack = [document.getElementById('btn-frame-back'), document.getElementById('btn-bottom-back')];
+      const btnsForward = [document.getElementById('btn-frame-forward'), document.getElementById('btn-bottom-forward')];
+
+      btnsBack.forEach(btn => {
+        if (!btn) return;
+        btn.disabled = !canBack;
+        btn.title = backTitle;
+      });
+      btnsForward.forEach(btn => {
+        if (!btn) return;
+        btn.disabled = !canForward;
+        btn.title = forwardTitle;
+      });
+    }
+
+    function navigateTabHistory(delta) {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (!activeTab || !Array.isArray(activeTab.history)) return;
+      const nextIdx = (typeof activeTab.historyIndex === 'number' ? activeTab.historyIndex : -1) + delta;
+      if (nextIdx < 0 || nextIdx >= activeTab.history.length) return;
+
+      const iframe = document.getElementById('frame-' + activeTab.id);
+      if (!iframe) return;
+
+      const prevRoute = activeTab.history[activeTab.historyIndex] || activeTab.route || '';
+      const targetRoute = activeTab.history[nextIdx];
+      activeTab.historyIndex = nextIdx;
+      activeTab._navigatingToRoute = targetRoute;
+      if (activeTab._navTimeout) clearTimeout(activeTab._navTimeout);
+      activeTab._navTimeout = setTimeout(() => {
+        activeTab._navigatingToRoute = null;
+        activeTab._navTimeout = null;
+      }, 3000);
+
+      const prevType = getToolTypeByRoute(prevRoute);
+      const targetType = getToolTypeByRoute(targetRoute);
+
+      activeTab.route = targetRoute;
+      updateTabTypeAndTitle(activeTab, targetRoute);
+      renderTabsBar();
+      updateFrameNavButtons();
+
+      // Nếu chuyển đổi nội bộ giữa các trang HIS (cùng origin subdomain) -> gửi postMessage cho frame-sync.js để chuyển trang tức thì
+      if (prevType === 'his' && targetType === 'his' && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage({
+            type: 'YTCS_FRAME_NAVIGATE',
+            action: 'goto',
+            route: targetRoute
+          }, '*');
+        } catch (e) {
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+          const host = isLocal && activeTab.subdomain ? `${activeTab.subdomain}.localhost:${window.location.port || 8888}` : window.location.host;
+          const sep = targetRoute.includes('?') ? '&' : '?';
+          iframe.src = `${window.location.protocol}//${host}${targetRoute}${sep}_v=${Date.now()}`;
+        }
+      } else if (targetType !== 'his') {
+        const tok = activeTab.account?.accessToken || '';
+        const sep = targetRoute.includes('?') ? '&' : '?';
+        iframe.src = targetType === 'excel'
+          ? `${window.location.origin}${targetRoute}`
+          : `${window.location.origin}${targetRoute}${tok ? sep + 'token=' + encodeURIComponent(tok) : ''}`;
+      } else {
+        const isLocal = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.localhost');
+        const host = isLocal && activeTab.subdomain ? `${activeTab.subdomain}.localhost:${window.location.port || 8888}` : window.location.host;
+        const sep = targetRoute.includes('?') ? '&' : '?';
+        iframe.src = `${window.location.protocol}//${host}${targetRoute}${sep}_v=${Date.now()}`;
+      }
+
+      updateBottomUrlBar();
+    }
+
+    function reloadActiveFrame() {
+      const activeTab = tabs.find(t => t.id === activeTabId);
+      if (!activeTab) return;
+      const iframe = document.getElementById('frame-' + activeTab.id);
+      if (!iframe) return;
+
+      const curType = getToolTypeByRoute(activeTab.route || '');
+      if (curType === 'his' && iframe.contentWindow) {
+        try {
+          iframe.contentWindow.postMessage({ type: 'YTCS_FRAME_NAVIGATE', action: 'reload' }, '*');
+        } catch (e) {
+          iframe.src = iframe.src;
+        }
+      } else {
+        try { iframe.contentWindow.location.reload(); }
+        catch (e) { iframe.src = iframe.src; }
+      }
+      showToast('Đang tải lại Frame...', 'info');
+      setTimeout(updateBottomUrlBar, 500);
+    }
+
+    if (btnFrameBack) btnFrameBack.addEventListener('click', () => navigateTabHistory(-1));
+    if (btnFrameForward) btnFrameForward.addEventListener('click', () => navigateTabHistory(1));
+    if (btnFrameReload) btnFrameReload.addEventListener('click', reloadActiveFrame);
+    if (btnBottomBack) btnBottomBack.addEventListener('click', () => navigateTabHistory(-1));
+    if (btnBottomForward) btnBottomForward.addEventListener('click', () => navigateTabHistory(1));
+
+    // Phím tắt Alt + Mũi tên trái/phải để lùi/tiến Frame
+    window.addEventListener('keydown', (e) => {
+      if (e.altKey && !e.ctrlKey && !e.shiftKey) {
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          navigateTabHistory(-1);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          navigateTabHistory(1);
+        }
+      }
+    });
 
     function setBottomBarVisibility(visible) {
       if (visible) {
@@ -3508,6 +3801,7 @@
       if (!targetPath.startsWith('/')) targetPath = '/' + targetPath;
 
       activeTab.route = targetPath;
+      recordTabHistory(activeTab, targetPath);
       updateTabTypeAndTitle(activeTab, targetPath);
       renderTabsBar();
       if (targetPath === '/lien-thong-ksk' || targetPath.startsWith('/lien-thong-ksk')) {
@@ -3558,17 +3852,7 @@
       }
     });
 
-    btnBottomReload.addEventListener('click', () => {
-      const activeTab = tabs.find(t => t.id === activeTabId);
-      if (!activeTab) return;
-      const iframe = document.getElementById('frame-' + activeTab.id);
-      if (iframe) {
-        try { iframe.contentWindow.location.reload(); }
-        catch (e) { iframe.src = iframe.src; }
-        showToast('Đang tải lại Frame...', 'info');
-        setTimeout(updateBottomUrlBar, 500);
-      }
-    });
+    btnBottomReload.addEventListener('click', reloadActiveFrame);
 
     btnBottomHide.addEventListener('click', () => {
       setBottomBarVisibility(false);

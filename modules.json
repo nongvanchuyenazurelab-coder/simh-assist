@@ -51,12 +51,12 @@
   },
   {
     "id": "mod_9",
-    "name": "Màn hình Chọn khoa phòng",
-    "route": "/new/his/chon-khoaphong"
+    "name": "DM phiếu in báo cáo",
+    "route": "/new/his/danhmuc/dm-chung/phieuin-baocao"
   },
   {
     "id": "mod_10",
-    "name": "Màn hình Login gốc",
-    "route": "/new/his/dang-nhap"
+    "name": "QL Báo cáo V2",
+    "route": "/new/his/bao-cao/quan-ly-bao-cao/config"
   }
 ]

@@ -14,6 +14,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 // Module phân tích cURL & chuyển đổi Excel cho VNPT-HIS
 const { fetchFromCurl } = require('./curl_parser');
 const { convertHisJsonToWorkbook } = require('./his_converter');
+const hisThaiNguyenService = require('./his_thainguyen_service');
 
 // Bộ đệm lưu trữ workbook gần nhất cho việc tải về Excel
 let lastExcelBuffer = null;
@@ -732,6 +733,51 @@ const server = http.createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=UTF-8' });
       res.end(JSON.stringify({ success: false, message: err.message }));
+    }
+    return;
+  }
+
+  // 4b. API tích hợp VNPT HIS Thái Nguyên: Quản lý kích hoạt User theo Đơn vị
+  if (pathname === '/_mgr/his-tn/status' && req.method === 'GET') {
+    setCors();
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+    res.end(JSON.stringify(hisThaiNguyenService.getStatus()));
+    return;
+  }
+
+  if (pathname === '/_mgr/his-tn/login' && req.method === 'POST') {
+    setCors();
+    try {
+      const { username, password } = await parseRequestBody(req);
+      const result = await hisThaiNguyenService.loginHisThaiNguyen(username || 'ADMIN_IT', password || 'Hmis@@2026');
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(JSON.stringify(result));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(JSON.stringify({ ok: false, message: err.message }));
+    }
+    return;
+  }
+
+  if (pathname === '/_mgr/his-tn/enable-users' && req.method === 'POST') {
+    setCors();
+    try {
+      const data = await parseRequestBody(req);
+      let items = [];
+      if (Array.isArray(data.items)) {
+        items = data.items;
+      } else if (data.madonvi && data.username) {
+        items = [{ madonvi: data.madonvi, username: data.username }];
+      } else {
+        throw new Error('Dữ liệu yêu cầu không hợp lệ. Cần truyền madonvi & username hoặc mảng items.');
+      }
+
+      const result = await hisThaiNguyenService.processEnableUsers(items);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(JSON.stringify(result));
+    } catch (err) {
+      res.writeHead(400, { 'Content-Type': 'application/json; charset=UTF-8' });
+      res.end(JSON.stringify({ ok: false, message: err.message }));
     }
     return;
   }

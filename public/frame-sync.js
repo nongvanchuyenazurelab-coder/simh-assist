@@ -89,6 +89,38 @@
   setInterval(notifyParentUrl, 300);
   setTimeout(notifyParentUrl, 50);
 
+  // Nhận lệnh điều hướng Backward / Forward / Reload / Goto từ trang cha YTCS Manager (hỗ trợ cross-origin subdomain)
+  window.addEventListener('message', function(event) {
+    try {
+      var data = event && event.data;
+      if (!data || data.type !== 'YTCS_FRAME_NAVIGATE') return;
+      logTrace('frame_cmd_navigate', data.action + ' ' + (data.route || ''), window.location.href);
+
+      if (data.action === 'goto' && data.route) {
+        var targetRoute = String(data.route);
+        if (!targetRoute.startsWith('/')) targetRoute = '/' + targetRoute;
+        if (typeof window.singleSpaNavigate === 'function') {
+          try {
+            window.singleSpaNavigate(targetRoute);
+            setTimeout(notifyParentUrl, 120);
+            return;
+          } catch (spaErr) {}
+        }
+        window.location.assign(targetRoute);
+      } else if (data.action === 'back') {
+        window.history.back();
+        setTimeout(notifyParentUrl, 150);
+      } else if (data.action === 'forward') {
+        window.history.forward();
+        setTimeout(notifyParentUrl, 150);
+      } else if (data.action === 'reload') {
+        window.location.reload();
+      }
+    } catch (e) {
+      logTrace('frame_cmd_err', e.message, window.location.href);
+    }
+  });
+
   // Hook window.fetch và XMLHttpRequest để in log API trực tiếp vào DevTools Console và thông báo lên parent
   (function hookApiLogger() {
     var TARGET_API_HOST = 'ytcs-gw.hmis.vn';
