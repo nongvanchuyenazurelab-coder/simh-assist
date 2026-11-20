@@ -461,8 +461,8 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
-  // 1e. Proxy xem/in file PDF từ dms-hisl4.vnpt.vn (Khắc phục triệt để lỗi CORS khi in phiếu/đơn thuốc/kết quả)
-  if (pathname === '/dms-proxy' || pathname.startsWith('/dms-proxy/') || pathname.startsWith('/his4/')) {
+  // 1e. Proxy xem/in file PDF/XML từ dms-hisl4.vnpt.vn (Khắc phục triệt để lỗi CORS khi in phiếu/đơn thuốc/kết quả/XML)
+  if (pathname === '/dms-proxy' || pathname.startsWith('/dms-proxy/') || pathname.startsWith('/his4/') || pathname.includes('/dms-proxy')) {
     setCors();
     if (req.method === 'OPTIONS') {
       res.writeHead(204);
@@ -472,10 +472,12 @@ const server = http.createServer(async (req, res) => {
 
     let targetPdfUrl = parsedUrl.query.target || parsedUrl.query.url;
     if (!targetPdfUrl) {
-      if (pathname.startsWith('/dms-proxy/')) {
-        targetPdfUrl = 'https://dms-hisl4.vnpt.vn' + req.url.replace(/^\/dms-proxy/, '');
-      } else if (pathname.startsWith('/his4/')) {
-        targetPdfUrl = 'https://dms-hisl4.vnpt.vn' + req.url;
+      if (pathname.includes('/dms-proxy/')) {
+        const idx = req.url.indexOf('/dms-proxy/');
+        targetPdfUrl = 'https://dms-hisl4.vnpt.vn/' + req.url.slice(idx + 11);
+      } else if (pathname.includes('/his4/')) {
+        const idx = req.url.indexOf('/his4/');
+        targetPdfUrl = 'https://dms-hisl4.vnpt.vn' + req.url.slice(idx);
       }
     }
 
@@ -1305,11 +1307,16 @@ const server = http.createServer(async (req, res) => {
         proxyRes.on('end', () => {
           let bodyText = Buffer.concat(resChunks).toString('utf8');
           if (bodyText.includes('dms-') || bodyText.includes('vnpt.vn')) {
+            const hostHeader = req.headers['host'] || ('localhost:' + PORT);
+            const proto = req.connection?.encrypted || req.headers['x-forwarded-proto'] === 'https' ? 'https' : 'http';
+            const originBase = `${proto}://${hostHeader}`;
+
             bodyText = bodyText.replace(/https?(?::\\\/\\\/|:\/\/)(dms[-a-z0-9]*\.vnpt\.vn[^\",\s]+)/g, (match) => {
               const cleanUrl = match.replace(/\\\//g, '/');
-              return '/dms-proxy?target=' + encodeURIComponent(cleanUrl);
+              return originBase + '/dms-proxy?target=' + encodeURIComponent(cleanUrl);
             });
           }
+          delete respHeaders['transfer-encoding'];
           delete respHeaders['content-length'];
           respHeaders['content-length'] = Buffer.byteLength(bodyText);
           res.writeHead(proxyRes.statusCode, respHeaders);
@@ -1444,6 +1451,7 @@ const server = http.createServer(async (req, res) => {
           bodyData += frameSyncScript;
         }
 
+        delete respHeaders['transfer-encoding'];
         delete respHeaders['content-length'];
         delete respHeaders['etag'];
         delete respHeaders['last-modified'];
@@ -1469,6 +1477,7 @@ const server = http.createServer(async (req, res) => {
         bodyData = bodyData.replaceAll('Y.includes("localhost") ? "https://his4-dev.vncare.vn" : Y', 'Y');
         bodyData = bodyData.replaceAll('"https://his4-dev.vncare.vn"', '""');
 
+        delete respHeaders['transfer-encoding'];
         delete respHeaders['content-length'];
         res.writeHead(proxyRes.statusCode, respHeaders);
         res.end(bodyData);
