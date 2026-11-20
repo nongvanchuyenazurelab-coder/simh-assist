@@ -348,7 +348,7 @@ async function performLogin(username, password, regionCode = 'region2') {
 
 const server = http.createServer(async (req, res) => {
   const parsedUrl = url.parse(req.url, true);
-  const pathname = parsedUrl.pathname;
+  let pathname = parsedUrl.pathname;
 
   if (pathname !== '/_mgr/trace' && !pathname.startsWith('/new/assets') && !pathname.endsWith('.png') && !pathname.endsWith('.woff2') && !pathname.endsWith('.css') && !pathname.endsWith('.js')) {
     try {
@@ -1233,6 +1233,12 @@ const server = http.createServer(async (req, res) => {
       'Content-Length': lastExcelBuffer.length
     });
     return res.end(lastExcelBuffer);
+  }
+
+  // 5h. Chuẩn hóa các request file tĩnh i18n/assets bị Angular HttpInterceptor vô tình thêm tiền tố '/api/'
+  if (pathname.startsWith('/api/new/') || pathname.startsWith('/api//new/') || (pathname.startsWith('/api/') && (pathname.includes('/assets/') || pathname.includes('/apps/')))) {
+    req.url = req.url.replace(/^\/api\/+/, '/');
+    pathname = url.parse(req.url).pathname;
   }
 
   // 6. Proxy tất cả các request '/api/*' sang TARGET_API_HOST

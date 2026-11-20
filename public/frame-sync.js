@@ -20,10 +20,10 @@
 
   logTrace('frame_injected_head', 'script_start', window.location.href);
 
-  // Khởi tạo api:url:base trong localStorage nếu chưa có để phòng ngừa Angular HttpClient interceptor bị null
+  // Dọn dẹp api:url:base trong localStorage nếu có để tránh Angular HttpInterceptor ghép nối sai đường dẫn i18n/assets
   try {
-    if (!localStorage.getItem('api:url:base')) {
-      localStorage.setItem('api:url:base', window.location.origin + '/api/');
+    if (localStorage.getItem('api:url:base')) {
+      localStorage.removeItem('api:url:base');
     }
   } catch(e) {}
 
