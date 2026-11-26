@@ -499,6 +499,132 @@
     #toast.success { background: #065f46; }
     #toast.error { background: #991b1b; }
     #toast.warning { background: #92400e; }
+
+    /* Modal Cấu hình Chữ Ký Số SmartCA */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 14px;
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+      width: 100%;
+      max-width: 860px;
+      max-height: 92vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      animation: modalSlideIn 0.22s ease-out;
+    }
+    @keyframes modalSlideIn {
+      from { transform: translateY(14px) scale(0.98); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .modal-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+    }
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0;
+    }
+    .modal-header .btn-close {
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      line-height: 1;
+      color: #64748b;
+      cursor: pointer;
+      padding: 2px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+    .modal-header .btn-close:hover {
+      background: #e2e8f0;
+      color: #0f172a;
+    }
+    .modal-body {
+      padding: 16px 20px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 13px;
+    }
+    .modal-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      background: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .sign-step-badge {
+      font-size: 11px;
+      padding: 3px 9px;
+      border-radius: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+    .step-pending { background: #f1f5f9; color: #64748b; border: 1px solid #cbd5e1; }
+    .step-running { background: #eff6ff; color: #1d4ed8; border: 1px solid #93c5fd; animation: pulse 1.5s infinite; }
+    .step-success { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+    .step-error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    
+    .cert-item {
+      padding: 9px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: #f8fafc;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12px;
+    }
+    .cert-item:hover {
+      border-color: #a855f7;
+      background: #faf5ff;
+    }
+    .cert-item.selected {
+      border-color: #7c3aed;
+      background: #f3e8ff;
+      box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+    }
   </style>
 </head>
 <body>
@@ -533,6 +659,7 @@
       >
       <button type="button" class="btn btn-outline btn-sm" id="btnApplyToken">✓ Áp dụng Token</button>
       <button type="button" class="btn btn-purple-soft btn-sm" id="btnRefreshOfficers">🔄 Tải DS Nhân viên</button>
+      <button type="button" class="btn btn-primary btn-sm" id="btnOpenSignModal" style="background:#7c3aed;color:#fff;border:none;">✍️ Cấu hình Ký số (SmartCA)</button>
     </section>
 
     <div class="grid-main">
@@ -920,6 +1047,133 @@
 
   <div id="toast"></div>
 
+  <!-- Modal: Cấu hình Chữ Ký Số SmartCA -->
+  <div id="modalSignConfig" class="modal-overlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>
+          <span>✍️</span>
+          <span>Cấu hình Chữ Ký Số SmartCA (Gán chứng thư &amp; Ký số ESEAL)</span>
+        </h3>
+        <button type="button" class="btn-close" id="btnCloseSignModal" title="Đóng">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Thông báo hướng dẫn quy trình -->
+        <div style="background:#f5f3ff;border:1px solid #ddd6fe;border-radius:8px;padding:9px 13px;font-size:12px;color:#5b21b6;line-height:1.5;">
+          <strong>Quy trình chuẩn hóa Ký số 2 Bước:</strong><br>
+          • <strong>Bước 1:</strong> Thiết lập phương thức ký cá nhân (signMethodId = <code>9</code>)<br>
+          • <strong>Bước 2:</strong> Gán chứng thư số: Tra cứu SmartCA theo CCCD ➔ Xóa session cũ ➔ Chọn cert mặc định cho User ➔ Gán Secret Key ESEAL.
+        </div>
+
+        <!-- Input Parameters Grid -->
+        <div class="form-grid">
+          <div class="field">
+            <label for="inputSignCccd">
+              <span>💳 TK SmartCA / Số CCCD:</span>
+              <span class="req">*</span>
+            </label>
+            <input type="text" id="inputSignCccd" class="input" value="027095009109" placeholder="VD: 027095009109">
+          </div>
+
+          <div class="field">
+            <label for="inputSignUserId">
+              <span>🆔 User ID hệ thống (userId):</span>
+              <span class="req">*</span>
+            </label>
+            <input type="number" id="inputSignUserId" class="input" placeholder="Tự động nạp từ Token (hoặc nhập ID)">
+          </div>
+
+          <div class="field">
+            <label for="inputSignMethodId">
+              <span>⚙️ SignMethod ID (Bước 1):</span>
+            </label>
+            <input type="number" id="inputSignMethodId" class="input" value="9">
+          </div>
+
+          <div class="field">
+            <label for="inputSignMethodCode">
+              <span>🏷️ SignMethod Code (Bước 2):</span>
+            </label>
+            <input type="text" id="inputSignMethodCode" class="input" value="ESEAL">
+          </div>
+
+          <div class="field">
+            <label for="inputSignSessionMethod">
+              <span>🔄 Session Method (Xóa session cũ):</span>
+            </label>
+            <input type="text" id="inputSignSessionMethod" class="input" value="ESEAL769">
+          </div>
+
+          <div class="field">
+            <label for="inputSignAppCode">
+              <span>🔑 App Code (Bước 2.4):</span>
+            </label>
+            <input type="text" id="inputSignAppCode" class="input" value="SECRET_KEY">
+          </div>
+
+          <div class="field full">
+            <label for="inputSignSecretKey">
+              <span>🔐 Secret Key (cval - Base64):</span>
+              <span class="req">*</span>
+            </label>
+            <input type="text" id="inputSignSecretKey" class="input mono" value="MzMxMEI2NkIwQjY5RjYzREE1OUUyQTQ2ODBDQkRDNjI=">
+          </div>
+        </div>
+
+        <!-- Progress Steps Tracker -->
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px 13px;background:#f8fafc;">
+          <div style="font-size:12px;font-weight:700;color:#334155;margin-bottom:7px;">Trạng thái thực thi các bước API:</div>
+          <div style="display:flex;flex-wrap:wrap;gap:7px;">
+            <span id="badgeStep1" class="sign-step-badge step-pending">1️⃣ Bước 1: Set SignMethod</span>
+            <span id="badgeStep21" class="sign-step-badge step-pending">2.1 🔍 Lấy Cert SmartCA</span>
+            <span id="badgeStep22" class="sign-step-badge step-pending">2.2 🗑️ Xóa Session cũ</span>
+            <span id="badgeStep23" class="sign-step-badge step-pending">2.3 📌 Gán Cert mặc định</span>
+            <span id="badgeStep24" class="sign-step-badge step-pending">2.4 🔑 Gán Secret Key</span>
+          </div>
+        </div>
+
+        <!-- Certificates list container -->
+        <div id="signCertsContainer" style="display:none;border:1px solid #e2e8f0;border-radius:10px;padding:10px 13px;background:#ffffff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+            <div style="font-size:12px;font-weight:700;color:#1e293b;">
+              📜 Danh sách Chứng thư số (<span id="signCertCount">0</span>):
+            </div>
+            <div style="font-size:11px;color:#64748b;">Chọn chứng thư áp dụng Bước 2.3 &amp; 2.4</div>
+          </div>
+          <div id="signCertsList" style="max-height:150px;overflow-y:auto;">
+            <!-- Render items dynamically -->
+          </div>
+        </div>
+
+        <!-- Log & Result Box -->
+        <div style="border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+          <div style="background:#f1f5f9;padding:6px 12px;display:flex;align-items:center;justify-content:space-between;font-size:11.5px;font-weight:600;color:#475569;">
+            <span>📋 Nhật ký phản hồi API (Console Log)</span>
+            <button type="button" class="btn btn-outline btn-sm" id="btnClearSignLog" style="height:22px;padding:1px 6px;font-size:11px;">Xóa log</button>
+          </div>
+          <pre id="signConsoleLog" class="mono" style="margin:0;padding:8px 12px;font-size:11.5px;max-height:120px;overflow-y:auto;background:#0f172a;color:#f8fafc;white-space:pre-wrap;word-break:break-all;">Sẵn sàng thực hiện cấu hình ký số...</pre>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div style="display:flex;gap:5px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnRunStep1Only" title="Chỉ chạy Bước 1">1️⃣ Chỉ Bước 1</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnRunStep21Only" title="Chỉ tra cứu danh sách chứng thư số">2.1 🔍 Tra Cert</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnRunStep22Only" title="Chỉ xóa session SmartCA">2.2 🗑️ Xóa Session</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnRunStep23Only" title="Chỉ gán chứng thư đã chọn cho User">2.3 📌 Gán Cert</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnRunStep24Only" title="Chỉ gán Secret Key cho Cert">2.4 🔑 Gán Secret</button>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button type="button" class="btn btn-outline btn-sm" id="btnCloseSignModalBottom">Đóng</button>
+          <button type="button" class="btn btn-primary" id="btnExecuteFullSignConfig" style="background:#7c3aed;color:#fff;border:none;padding:7px 16px;font-weight:700;">
+            ⚡ Chạy Cấu Hình Toàn Bộ (Bước 1 ➔ Bước 2)
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     (function (root) {
       'use strict';
@@ -1202,7 +1456,9 @@
         mode: 'single', // 'single' | 'batch'
         isBusy: false,
         officers: [],
-        lastCreatedOfficer: null // { officerId, officerCode, officerName }
+        lastCreatedOfficer: null, // { officerId, officerCode, officerName }
+        selectedCertId: null,
+        certsList: []
       };
 
       const $ = (id) => document.getElementById(id);
@@ -1211,6 +1467,7 @@
         tokenInput: $('tokenInput'),
         btnApplyToken: $('btnApplyToken'),
         btnRefreshOfficers: $('btnRefreshOfficers'),
+        btnOpenSignModal: $('btnOpenSignModal'),
         pillTokenStatus: $('pillTokenStatus'),
         pillUnitName: $('pillUnitName'),
         pillCsyt: $('pillCsyt'),
@@ -1298,7 +1555,34 @@
         hisResultsWrap: $('hisResultsWrap'),
         hisResultTitle: $('hisResultTitle'),
         hisProgressBadge: $('hisProgressBadge'),
-        hisResultTableBody: $('hisResultTableBody')
+        hisResultTableBody: $('hisResultTableBody'),
+
+        modalSignConfig: $('modalSignConfig'),
+        btnCloseSignModal: $('btnCloseSignModal'),
+        btnCloseSignModalBottom: $('btnCloseSignModalBottom'),
+        inputSignCccd: $('inputSignCccd'),
+        inputSignUserId: $('inputSignUserId'),
+        inputSignMethodId: $('inputSignMethodId'),
+        inputSignMethodCode: $('inputSignMethodCode'),
+        inputSignSessionMethod: $('inputSignSessionMethod'),
+        inputSignAppCode: $('inputSignAppCode'),
+        inputSignSecretKey: $('inputSignSecretKey'),
+        badgeStep1: $('badgeStep1'),
+        badgeStep21: $('badgeStep21'),
+        badgeStep22: $('badgeStep22'),
+        badgeStep23: $('badgeStep23'),
+        badgeStep24: $('badgeStep24'),
+        signCertsContainer: $('signCertsContainer'),
+        signCertCount: $('signCertCount'),
+        signCertsList: $('signCertsList'),
+        signConsoleLog: $('signConsoleLog'),
+        btnClearSignLog: $('btnClearSignLog'),
+        btnExecuteFullSignConfig: $('btnExecuteFullSignConfig'),
+        btnRunStep1Only: $('btnRunStep1Only'),
+        btnRunStep21Only: $('btnRunStep21Only'),
+        btnRunStep22Only: $('btnRunStep22Only'),
+        btnRunStep23Only: $('btnRunStep23Only'),
+        btnRunStep24Only: $('btnRunStep24Only')
       };
 
       let toastTimer = null;
@@ -1577,6 +1861,38 @@
         });
         const rawText = await res.text();
         const parsed = parseApiResult(res.ok, res.status, rawText);
+        return { httpStatus: res.status, rawText, ...parsed };
+      }
+
+      async function apiPutJson(url, payload = null) {
+        const options = {
+          method: 'PUT',
+          headers: getAuthHeaders()
+        };
+        if (payload !== null) {
+          options.body = JSON.stringify(payload);
+        }
+        const res = await fetch(url, options);
+        const rawText = await res.text();
+        const parsed = parseApiResult(res.ok, res.status, rawText);
+        if (res.ok && !rawText) {
+          parsed.isSuccess = true;
+          parsed.message = 'Thành công (HTTP ' + res.status + ')';
+        }
+        return { httpStatus: res.status, rawText, ...parsed };
+      }
+
+      async function apiDeleteJson(url) {
+        const res = await fetch(url, {
+          method: 'DELETE',
+          headers: getAuthHeaders()
+        });
+        const rawText = await res.text();
+        const parsed = parseApiResult(res.ok, res.status, rawText);
+        if (res.ok && !rawText) {
+          parsed.isSuccess = true;
+          parsed.message = 'Thành công (HTTP ' + res.status + ')';
+        }
         return { httpStatus: res.status, rawText, ...parsed };
       }
 
@@ -1924,8 +2240,9 @@
               <td>${escapeHtml(o.officerName || '')}</td>
               <td class="mono">${o.maBacSi ? escapeHtml(o.maBacSi) : '<span style="color:var(--muted)">—</span>'}</td>
               <td><div style="font-size:11px;color:#475569;">${escapeHtml(khoaLabel)}</div>${statusBadge}</td>
-              <td style="white-space:nowrap;">
+              <td style="white-space:nowrap;display:flex;gap:4px;">
                 <button type="button" class="btn btn-outline btn-sm btn-check-user" data-id="${escapeHtml(o.id)}" data-code="${escapeHtml(o.officerCode || '')}" data-name="${escapeHtml(o.officerName || '')}" title="Kiểm tra tài khoản đăng nhập liên kết với nhân viên này">🔍 Check TK</button>
+                <button type="button" class="btn btn-purple-soft btn-sm btn-row-sign" data-id="${escapeHtml(o.id)}" data-code="${escapeHtml(o.officerCode || '')}" data-name="${escapeHtml(o.officerName || '')}" data-cmnd="${escapeHtml(o.cmnd || o.soCmnd || o.cccd || '')}" title="Mở cấu hình chữ ký số SmartCA cho nhân viên này">✍️ Ký số</button>
               </td>
             </tr>
           `;
@@ -2389,10 +2706,364 @@
         els.inputOfficerName.focus();
       });
 
-      els.officerTableBody.addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn-check-user');
-        if (!btn) return;
-        checkLinkedUser(btn.dataset.id, btn.dataset.code, btn.dataset.name);
+      // ===== CẤU HÌNH CHỮ KÝ SỐ SMARTCA MODAL CONTROLLER =====
+      function logSign(msg, isError = false) {
+        if (!els.signConsoleLog) return;
+        const now = new Date().toLocaleTimeString();
+        const line = `[${now}] ${isError ? '❌ ' : ''}${msg}\n`;
+        els.signConsoleLog.textContent += line;
+        els.signConsoleLog.scrollTop = els.signConsoleLog.scrollHeight;
+      }
+
+      function setStepBadge(badgeEl, status, text = null) {
+        if (!badgeEl) return;
+        badgeEl.className = 'sign-step-badge step-' + status;
+        if (text) badgeEl.textContent = text;
+      }
+
+      function resetSignStepBadges() {
+        setStepBadge(els.badgeStep1, 'pending', '1️⃣ Bước 1: Set SignMethod');
+        setStepBadge(els.badgeStep21, 'pending', '2.1 🔍 Lấy Cert SmartCA');
+        setStepBadge(els.badgeStep22, 'pending', '2.2 🗑️ Xóa Session cũ');
+        setStepBadge(els.badgeStep23, 'pending', '2.3 📌 Gán Cert mặc định');
+        setStepBadge(els.badgeStep24, 'pending', '2.4 🔑 Gán Secret Key');
+      }
+
+      function openSignModal(data = {}) {
+        if (!state.token) {
+          showToast('Vui lòng chọn tài khoản đơn vị hoặc nhập Bearer Token trước!', 'warning');
+          return;
+        }
+
+        if (data.userId) {
+          els.inputSignUserId.value = data.userId;
+        } else if (state.jwtPayload && state.jwtPayload.jti) {
+          els.inputSignUserId.value = state.jwtPayload.jti;
+        }
+
+        if (data.cccd) {
+          els.inputSignCccd.value = data.cccd;
+        }
+
+        if (data.officerName) {
+          logSign(`Mở cấu hình chữ ký số cho: ${data.officerName} (User ID: ${els.inputSignUserId.value || '?'})`);
+        } else {
+          logSign(`Mở cấu hình chữ ký số cho User ID: ${els.inputSignUserId.value || '?'}`);
+        }
+
+        resetSignStepBadges();
+        els.modalSignConfig.classList.add('open');
+      }
+
+      function closeSignModal() {
+        els.modalSignConfig.classList.remove('open');
+      }
+
+      function renderCertificates(certs) {
+        state.certsList = Array.isArray(certs) ? certs : [];
+        els.signCertCount.textContent = String(state.certsList.length);
+
+        if (state.certsList.length === 0) {
+          els.signCertsContainer.style.display = 'block';
+          els.signCertsList.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px;">Không tìm thấy chứng thư nào cho tài khoản này.</div>';
+          state.selectedCertId = null;
+          return;
+        }
+
+        const defaultCert = state.certsList.find(c => c.isDefault === 1) || state.certsList[0];
+        state.selectedCertId = defaultCert ? defaultCert.id : null;
+
+        els.signCertsList.innerHTML = state.certsList.map(c => {
+          const isSel = c.id === state.selectedCertId;
+          const isDef = c.isDefault === 1;
+          const subject = c.subjectCN || c.subject || c.name || ('Chứng thư #' + c.id);
+          const account = c.thirdPartyAccount || c.uid || '';
+          const serial = c.serialNumber || '—';
+          const validTo = c.validTo || '—';
+
+          return `
+            <div class="cert-item ${isSel ? 'selected' : ''}" data-id="${c.id}">
+              <div>
+                <div style="font-weight:700;color:#1e293b;display:flex;align-items:center;gap:6px;">
+                  <input type="radio" name="signCertRadio" value="${c.id}" ${isSel ? 'checked' : ''} style="accent-color:#7c3aed;">
+                  <span>${escapeHtml(subject)}</span>
+                  ${isDef ? '<span class="badge badge-ok" style="font-size:10px;">Mặc định</span>' : ''}
+                </div>
+                <div style="font-size:11px;color:#64748b;margin-top:2px;">
+                  <strong>Cert ID:</strong> ${c.id} | <strong>CCCD/TK:</strong> ${escapeHtml(account)} | <strong>Hạn dùng:</strong> ${escapeHtml(validTo)}
+                </div>
+                <div style="font-size:10.5px;color:#94a3b8;font-family:monospace;">
+                  Serial: ${escapeHtml(serial)}
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        els.signCertsContainer.style.display = 'block';
+
+        els.signCertsList.querySelectorAll('.cert-item').forEach(item => {
+          item.addEventListener('click', () => {
+            const cid = Number(item.dataset.id);
+            state.selectedCertId = cid;
+            els.signCertsList.querySelectorAll('.cert-item').forEach(el => {
+              const matched = Number(el.dataset.id) === cid;
+              el.classList.toggle('selected', matched);
+              const radio = el.querySelector('input[type="radio"]');
+              if (radio) radio.checked = matched;
+            });
+            logSign(`Đã chọn chứng thư số ID: ${cid}`);
+          });
+        });
+      }
+
+      async function runSignStep1() {
+        const signMethodId = els.inputSignMethodId.value.trim() || '9';
+        setStepBadge(els.badgeStep1, 'running', '1️⃣ Đang set SignMethod...');
+        logSign(`[Bước 1] PUT /api/common/hosocanhan/signMethod?signMethodId=${signMethodId}`);
+        try {
+          const res = await apiPutJson(`/api/common/hosocanhan/signMethod?signMethodId=${encodeURIComponent(signMethodId)}`);
+          if (res.isSuccess) {
+            setStepBadge(els.badgeStep1, 'success', '1️⃣ Bước 1: Thành công');
+            logSign(`[Bước 1] Thành công (HTTP ${res.httpStatus})`);
+            return true;
+          }
+          setStepBadge(els.badgeStep1, 'error', '1️⃣ Bước 1: Lỗi');
+          logSign(`[Bước 1] Thất bại: ${res.message}`, true);
+          return false;
+        } catch (err) {
+          setStepBadge(els.badgeStep1, 'error', '1️⃣ Bước 1: Lỗi');
+          logSign(`[Bước 1] Lỗi ngoại lệ: ${err.message}`, true);
+          return false;
+        }
+      }
+
+      async function runSignStep21() {
+        const cccd = els.inputSignCccd.value.trim();
+        if (!cccd) {
+          showToast('Vui lòng nhập Số CCCD / TK SmartCA!', 'warning');
+          return false;
+        }
+        setStepBadge(els.badgeStep21, 'running', '2.1 🔍 Đang tra cứu Cert...');
+        logSign(`[Bước 2.1] POST /api/common/usersigncert/thirdparty - params: ["${cccd}"]`);
+        try {
+          const payload = { params: [cccd], type: 'SMART_CA' };
+          const res = await apiPostJson('/api/common/usersigncert/thirdparty', payload);
+          if (res.isSuccess) {
+            const certs = res.json?.data || [];
+            renderCertificates(certs);
+            setStepBadge(els.badgeStep21, 'success', `2.1 🔍 Tìm thấy ${certs.length} Cert`);
+            logSign(`[Bước 2.1] Thành công: Tìm thấy ${certs.length} chứng thư số (ID đã chọn: ${state.selectedCertId || 'Chưa có'})`);
+            return true;
+          }
+          setStepBadge(els.badgeStep21, 'error', '2.1 🔍 Lấy Cert thất bại');
+          logSign(`[Bước 2.1] Lỗi tra cứu: ${res.message}`, true);
+          return false;
+        } catch (err) {
+          setStepBadge(els.badgeStep21, 'error', '2.1 🔍 Lỗi');
+          logSign(`[Bước 2.1] Lỗi ngoại lệ: ${err.message}`, true);
+          return false;
+        }
+      }
+
+      async function runSignStep22() {
+        const sessionMethod = els.inputSignSessionMethod.value.trim() || 'ESEAL769';
+        setStepBadge(els.badgeStep22, 'running', '2.2 🗑️ Đang xóa session...');
+        logSign(`[Bước 2.2] DELETE /api/signing/smartca/session?signMethod=${sessionMethod}`);
+        try {
+          const res = await apiDeleteJson(`/api/signing/smartca/session?signMethod=${encodeURIComponent(sessionMethod)}`);
+          if (res.isSuccess) {
+            setStepBadge(els.badgeStep22, 'success', '2.2 🗑️ Xóa Session thành công');
+            logSign(`[Bước 2.2] Thành công (HTTP ${res.httpStatus})`);
+            return true;
+          }
+          setStepBadge(els.badgeStep22, 'error', '2.2 🗑️ Lỗi xóa session');
+          logSign(`[Bước 2.2] Cảnh báo/Lỗi: ${res.message}`);
+          return true;
+        } catch (err) {
+          setStepBadge(els.badgeStep22, 'error', '2.2 🗑️ Lỗi');
+          logSign(`[Bước 2.2] Ngoại lệ: ${err.message}`);
+          return true;
+        }
+      }
+
+      async function runSignStep23() {
+        const userId = Number(els.inputSignUserId.value.trim());
+        const certId = Number(state.selectedCertId);
+        if (!userId) {
+          showToast('Vui lòng nhập User ID hệ thống (userId)!', 'warning');
+          return false;
+        }
+        if (!certId) {
+          showToast('Chưa có Cert ID! Vui lòng chạy Bước 2.1 hoặc chọn chứng thư trước.', 'warning');
+          return false;
+        }
+        setStepBadge(els.badgeStep23, 'running', '2.3 📌 Đang gán Cert...');
+        logSign(`[Bước 2.3] POST /api/common/usersigncert/addcertdefault - userId: ${userId}, certId: ${certId}`);
+        try {
+          const payload = { userId, certId };
+          const res = await apiPostJson('/api/common/usersigncert/addcertdefault', payload);
+          if (res.isSuccess) {
+            setStepBadge(els.badgeStep23, 'success', '2.3 📌 Gán Cert mặc định OK');
+            logSign(`[Bước 2.3] Thành công: Đã gán certId = ${certId} cho userId = ${userId}`);
+            return true;
+          }
+          setStepBadge(els.badgeStep23, 'error', '2.3 📌 Gán Cert lỗi');
+          logSign(`[Bước 2.3] Lỗi gán cert: ${res.message}`, true);
+          return false;
+        } catch (err) {
+          setStepBadge(els.badgeStep23, 'error', '2.3 📌 Lỗi');
+          logSign(`[Bước 2.3] Lỗi ngoại lệ: ${err.message}`, true);
+          return false;
+        }
+      }
+
+      async function runSignStep24() {
+        const certId = Number(state.selectedCertId);
+        const signMethodCode = els.inputSignMethodCode.value.trim() || 'ESEAL';
+        const appCode = els.inputSignAppCode.value.trim() || 'SECRET_KEY';
+        const secretKey = els.inputSignSecretKey.value.trim();
+
+        if (!certId) {
+          showToast('Chưa có Cert ID! Vui lòng chạy Bước 2.1 hoặc chọn chứng thư trước.', 'warning');
+          return false;
+        }
+        if (!secretKey) {
+          showToast('Vui lòng nhập Secret Key (Base64)!', 'warning');
+          return false;
+        }
+
+        setStepBadge(els.badgeStep24, 'running', '2.4 🔑 Đang thêm Secret Key...');
+        logSign(`[Bước 2.4] POST /api/common/usersigncredential/add-secret?certId=${certId}&signMethodCode=${signMethodCode}`);
+        try {
+          const payload = [
+            { ckey: appCode, cval: 'SECRET_KEY' },
+            { ckey: 'SECRET_KEY', cval: secretKey }
+          ];
+          const res = await apiPostJson(`/api/common/usersigncredential/add-secret?certId=${encodeURIComponent(certId)}&signMethodCode=${encodeURIComponent(signMethodCode)}`, payload);
+          if (res.isSuccess) {
+            setStepBadge(els.badgeStep24, 'success', '2.4 🔑 Gán Secret Key OK');
+            logSign(`[Bước 2.4] Thành công: Đã lưu Secret Key cho certId = ${certId}`);
+            return true;
+          }
+          setStepBadge(els.badgeStep24, 'error', '2.4 🔑 Gán Secret lỗi');
+          logSign(`[Bước 2.4] Lỗi lưu Secret Key: ${res.message}`, true);
+          return false;
+        } catch (err) {
+          setStepBadge(els.badgeStep24, 'error', '2.4 🔑 Lỗi');
+          logSign(`[Bước 2.4] Lỗi ngoại lệ: ${err.message}`, true);
+          return false;
+        }
+      }
+
+      async function runFullSignWorkflow() {
+        if (!state.token) {
+          showToast('Vui lòng nhập Bearer Token trước!', 'warning');
+          return;
+        }
+        const cccd = els.inputSignCccd.value.trim();
+        const userId = Number(els.inputSignUserId.value.trim());
+        if (!cccd) {
+          showToast('Vui lòng nhập Số CCCD / TK SmartCA!', 'warning');
+          els.inputSignCccd.focus();
+          return;
+        }
+        if (!userId) {
+          showToast('Vui lòng nhập User ID hệ thống (userId)!', 'warning');
+          els.inputSignUserId.focus();
+          return;
+        }
+
+        els.btnExecuteFullSignConfig.disabled = true;
+        els.btnExecuteFullSignConfig.textContent = '⏳ Đang thực thi...';
+        logSign('================ BẮT ĐẦU QUY TRÌNH CẤU HÌNH KÝ SỐ ================');
+
+        try {
+          const s1 = await runSignStep1();
+          if (!s1) {
+            showToast('Bước 1 (Set SignMethod) thất bại! Dừng quy trình.', 'error');
+            return;
+          }
+
+          const s21 = await runSignStep21();
+          if (!s21 || !state.selectedCertId) {
+            showToast('Bước 2.1 (Lấy Cert) thất bại hoặc không có chứng thư! Dừng quy trình.', 'error');
+            return;
+          }
+
+          await runSignStep22();
+
+          const s23 = await runSignStep23();
+          if (!s23) {
+            showToast('Bước 2.3 (Gán Cert mặc định) thất bại! Dừng quy trình.', 'error');
+            return;
+          }
+
+          const s24 = await runSignStep24();
+          if (!s24) {
+            showToast('Bước 2.4 (Thêm Secret Key) thất bại! Dừng quy trình.', 'error');
+            return;
+          }
+
+          logSign('🎉 HOÀN TẤT TOÀN BỘ QUY TRÌNH CẤU HÌNH KÝ SỐ THÀNH CÔNG!');
+          showToast('✅ Đã cấu hình Chữ Ký Số SmartCA thành công!', 'success');
+        } catch (err) {
+          logSign(`Lỗi trong quá trình chạy quy trình: ${err.message}`, true);
+          showToast('Lỗi: ' + err.message, 'error');
+        } finally {
+          els.btnExecuteFullSignConfig.disabled = false;
+          els.btnExecuteFullSignConfig.textContent = '⚡ Chạy Cấu Hình Toàn Bộ (Bước 1 ➔ Bước 2)';
+        }
+      }
+
+      if (els.btnOpenSignModal) els.btnOpenSignModal.addEventListener('click', () => openSignModal());
+      if (els.btnCloseSignModal) els.btnCloseSignModal.addEventListener('click', closeSignModal);
+      if (els.btnCloseSignModalBottom) els.btnCloseSignModalBottom.addEventListener('click', closeSignModal);
+      if (els.modalSignConfig) {
+        els.modalSignConfig.addEventListener('click', (e) => {
+          if (e.target === els.modalSignConfig) closeSignModal();
+        });
+      }
+      if (els.btnClearSignLog) {
+        els.btnClearSignLog.addEventListener('click', () => {
+          els.signConsoleLog.textContent = '';
+        });
+      }
+      if (els.btnExecuteFullSignConfig) els.btnExecuteFullSignConfig.addEventListener('click', runFullSignWorkflow);
+      if (els.btnRunStep1Only) els.btnRunStep1Only.addEventListener('click', runSignStep1);
+      if (els.btnRunStep21Only) els.btnRunStep21Only.addEventListener('click', runSignStep21);
+      if (els.btnRunStep22Only) els.btnRunStep22Only.addEventListener('click', runSignStep22);
+      if (els.btnRunStep23Only) els.btnRunStep23Only.addEventListener('click', runSignStep23);
+      if (els.btnRunStep24Only) els.btnRunStep24Only.addEventListener('click', runSignStep24);
+
+      els.officerTableBody.addEventListener('click', async (e) => {
+        const checkBtn = e.target.closest('.btn-check-user');
+        if (checkBtn) {
+          checkLinkedUser(checkBtn.dataset.id, checkBtn.dataset.code, checkBtn.dataset.name);
+          return;
+        }
+
+        const signBtn = e.target.closest('.btn-row-sign');
+        if (signBtn) {
+          const officerId = signBtn.dataset.id;
+          const officerName = signBtn.dataset.name;
+          const cmnd = signBtn.dataset.cmnd;
+
+          let linkedUserId = '';
+          try {
+            const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5`);
+            const users = res.json?.data?.content || res.json?.data || res.json?.content || [];
+            if (Array.isArray(users) && users.length > 0) {
+              linkedUserId = users[0].id;
+            }
+          } catch (err) {}
+
+          openSignModal({
+            userId: linkedUserId || (state.jwtPayload ? state.jwtPayload.jti : ''),
+            cccd: cmnd || '',
+            officerName: officerName
+          });
+        }
       });
 
       // Đồng bộ token từ parent frame hoặc query param ?token=
