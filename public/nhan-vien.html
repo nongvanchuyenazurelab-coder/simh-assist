@@ -1047,6 +1047,54 @@
 
   <div id="toast"></div>
 
+  <!-- Modal: Gán chức danh cho người dùng -->
+  <div id="modalSignTitleConfig" class="modal-overlay">
+    <div class="modal-card" style="max-width:680px;">
+      <div class="modal-header">
+        <h3><span>🏷️</span><span>Gán chức danh cho người dùng</span></h3>
+        <button type="button" class="btn-close" id="btnCloseSignTitleModal" title="Đóng">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:10px 12px;font-size:12px;color:#1e40af;line-height:1.5;">
+          Chọn nhân viên trong danh sách rồi gán một hoặc nhiều chức danh. Khi lưu, hệ thống lấy dữ liệu tài khoản `/admuser/detail`, cập nhật trường `signTitles` và gửi `/admuser/capnhat?id=`.
+        </div>
+
+        <div class="form-grid">
+          <div class="field">
+            <label><span>Nhân viên</span></label>
+            <input type="text" id="signTitleOfficerName" class="input" readonly>
+          </div>
+          <div class="field">
+            <label><span>User ID (admuser)</span></label>
+            <input type="number" id="signTitleUserId" class="input" placeholder="Không tìm thấy tài khoản">
+          </div>
+        </div>
+
+        <div class="field full">
+          <label for="signTitleSearch"><span>Tìm chức danh</span></label>
+          <input type="text" id="signTitleSearch" class="input" placeholder="Nhập mã hoặc tên chức danh...">
+        </div>
+
+        <div style="border:1px solid var(--border);border-radius:10px;padding:10px;background:#f8fafc;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:12px;font-weight:700;color:#334155;">
+            <span>Danh sách chức danh</span>
+            <span id="signTitleCount" style="color:#64748b;font-weight:600;">0 mục</span>
+          </div>
+          <div id="signTitleList" style="max-height:280px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+            <div style="text-align:center;color:var(--muted);padding:18px;">Đang tải chức danh...</div>
+          </div>
+        </div>
+
+        <pre id="signTitleLog" class="mono" style="margin:0;padding:8px 12px;font-size:11.5px;max-height:110px;overflow-y:auto;background:#0f172a;color:#f8fafc;border-radius:8px;white-space:pre-wrap;word-break:break-all;"></pre>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline btn-sm" id="btnCloseSignTitleModalBottom">Đóng</button>
+        <button type="button" class="btn btn-primary" id="btnSaveSignTitles" style="background:#2563eb;color:#fff;border:none;">💾 Lưu chức danh</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Modal: Cấu hình Chữ Ký Số SmartCA -->
   <div id="modalSignConfig" class="modal-overlay">
     <div class="modal-card">
@@ -1557,32 +1605,16 @@
         hisProgressBadge: $('hisProgressBadge'),
         hisResultTableBody: $('hisResultTableBody'),
 
-        modalSignConfig: $('modalSignConfig'),
-        btnCloseSignModal: $('btnCloseSignModal'),
-        btnCloseSignModalBottom: $('btnCloseSignModalBottom'),
-        inputSignCccd: $('inputSignCccd'),
-        inputSignUserId: $('inputSignUserId'),
-        inputSignMethodId: $('inputSignMethodId'),
-        inputSignMethodCode: $('inputSignMethodCode'),
-        inputSignSessionMethod: $('inputSignSessionMethod'),
-        inputSignAppCode: $('inputSignAppCode'),
-        inputSignSecretKey: $('inputSignSecretKey'),
-        badgeStep1: $('badgeStep1'),
-        badgeStep21: $('badgeStep21'),
-        badgeStep22: $('badgeStep22'),
-        badgeStep23: $('badgeStep23'),
-        badgeStep24: $('badgeStep24'),
-        signCertsContainer: $('signCertsContainer'),
-        signCertCount: $('signCertCount'),
-        signCertsList: $('signCertsList'),
-        signConsoleLog: $('signConsoleLog'),
-        btnClearSignLog: $('btnClearSignLog'),
-        btnExecuteFullSignConfig: $('btnExecuteFullSignConfig'),
-        btnRunStep1Only: $('btnRunStep1Only'),
-        btnRunStep21Only: $('btnRunStep21Only'),
-        btnRunStep22Only: $('btnRunStep22Only'),
-        btnRunStep23Only: $('btnRunStep23Only'),
-        btnRunStep24Only: $('btnRunStep24Only')
+        modalSignTitleConfig: $('modalSignTitleConfig'),
+        btnCloseSignTitleModal: $('btnCloseSignTitleModal'),
+        btnCloseSignTitleModalBottom: $('btnCloseSignTitleModalBottom'),
+        signTitleOfficerName: $('signTitleOfficerName'),
+        signTitleUserId: $('signTitleUserId'),
+        signTitleSearch: $('signTitleSearch'),
+        signTitleCount: $('signTitleCount'),
+        signTitleList: $('signTitleList'),
+        signTitleLog: $('signTitleLog'),
+        btnSaveSignTitles: $('btnSaveSignTitles'),
       };
 
       let toastTimer = null;
@@ -1765,7 +1797,7 @@
             if (isMatch) {
               return info.company?.name || info.defaultKhoa?.name || info.fullName || '';
             }
-          } catch(e) {}
+          } catch (e) {}
           return '';
         };
 
@@ -1773,7 +1805,7 @@
           try {
             const pName = validateJhiInfo(window.parent.localStorage.getItem('jhi-info'));
             if (pName) return pName;
-          } catch(e) {}
+          } catch (e) {}
         }
 
         const lName = validateJhiInfo(localStorage.getItem('jhi-info'));
@@ -2242,6 +2274,7 @@
               <td><div style="font-size:11px;color:#475569;">${escapeHtml(khoaLabel)}</div>${statusBadge}</td>
               <td style="white-space:nowrap;display:flex;gap:4px;">
                 <button type="button" class="btn btn-outline btn-sm btn-check-user" data-id="${escapeHtml(o.id)}" data-code="${escapeHtml(o.officerCode || '')}" data-name="${escapeHtml(o.officerName || '')}" title="Kiểm tra tài khoản đăng nhập liên kết với nhân viên này">🔍 Check TK</button>
+                <button type="button" class="btn btn-purple-soft btn-sm btn-row-sign-title" data-id="${escapeHtml(o.id)}" data-code="${escapeHtml(o.officerCode || '')}" data-name="${escapeHtml(o.officerName || '')}" title="Gán chức danh cho tài khoản người dùng liên kết">🏷️ Chức danh</button>
                 <button type="button" class="btn btn-purple-soft btn-sm btn-row-sign" data-id="${escapeHtml(o.id)}" data-code="${escapeHtml(o.officerCode || '')}" data-name="${escapeHtml(o.officerName || '')}" data-cmnd="${escapeHtml(o.cmnd || o.soCmnd || o.cccd || '')}" title="Mở cấu hình chữ ký số SmartCA cho nhân viên này">✍️ Ký số</button>
               </td>
             </tr>
@@ -2280,7 +2313,7 @@
         els.userLookupResult.classList.remove('hidden');
         els.userLookupResult.innerHTML = `Đang kiểm tra tài khoản của <strong>${escapeHtml(officerName)}</strong> (<code>officer.id = ${escapeHtml(officerId)}</code>)...`;
         try {
-          const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=20&sort=id&sort=desc`);
+          const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5&sort=id&sort=desc`);
           if (!res.isSuccess) {
             els.userLookupResult.innerHTML = `<span style="color:var(--danger)">Lỗi kiểm tra tài khoản: ${escapeHtml(res.message)}</span>`;
             return;
@@ -2773,7 +2806,7 @@
 
         if (state.certsList.length === 0) {
           els.signCertsContainer.style.display = 'block';
-          els.signCertsList.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:10px;">Không tìm thấy chứng thư nào cho tài khoản này.</div>';
+          els.signCertsList.innerHTML = '<div style="text-align:center;color:var(--danger);padding:18px;">Không tìm thấy chứng thư nào cho tài khoản này.</div>';
           state.selectedCertId = null;
           return;
         }
@@ -2848,10 +2881,6 @@
 
       async function runSignStep21() {
         const cccd = els.inputSignCccd.value.trim();
-        if (!cccd) {
-          showToast('Vui lòng nhập Số CCCD / TK SmartCA!', 'warning');
-          return false;
-        }
         setStepBadge(els.badgeStep21, 'running', '2.1 🔍 Đang tra cứu Cert...');
         logSign(`[Bước 2.1] POST /api/common/usersigncert/thirdparty - params: ["${cccd}"]`);
         try {
@@ -2906,6 +2935,7 @@
           showToast('Chưa có Cert ID! Vui lòng chạy Bước 2.1 hoặc chọn chứng thư trước.', 'warning');
           return false;
         }
+
         setStepBadge(els.badgeStep23, 'running', '2.3 📌 Đang gán Cert...');
         logSign(`[Bước 2.3] POST /api/common/usersigncert/addcertdefault - userId: ${userId}, certId: ${certId}`);
         try {
@@ -2959,7 +2989,7 @@
           return false;
         } catch (err) {
           setStepBadge(els.badgeStep24, 'error', '2.4 🔑 Lỗi');
-          logSign(`[Bước 2.4] Lỗi ngoại lệ: ${err.message}`, true);
+                   logSign(`[Bước  2.4] Lỗi ngoại lệ: ${err.message}`, true);
           return false;
         }
       }
@@ -3051,6 +3081,28 @@
           return;
         }
 
+        const signTitleBtn = e.target.closest('.btn-row-sign-title');
+        if (signTitleBtn) {
+          const officerId = signTitleBtn.dataset.id;
+          const officerName = signTitleBtn.dataset.name;
+
+          let linkedUserId = null;
+          try {
+            const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5&sort=id&sort=desc`);
+            const users = res.json?.data?.content || res.json?.data || res.json?.content || [];
+            if (Array.isArray(users) && users.length > 0) {
+              linkedUserId = users[0].id;
+            }
+          } catch (err) {}
+
+          openSignTitleModal({
+            officerId,
+            officerName,
+            userId: linkedUserId
+          });
+          return;
+        }
+
         const signBtn = e.target.closest('.btn-row-sign');
         if (signBtn) {
           const officerId = signBtn.dataset.id;
@@ -3058,13 +3110,11 @@
           const cmnd = signBtn.dataset.cmnd;
 
           let linkedUserId = '';
-          let linkedUsername = '';
           try {
             const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5&sort=id&sort=desc`);
             const users = res.json?.data?.content || res.json?.data || res.json?.content || [];
             if (Array.isArray(users) && users.length > 0) {
               linkedUserId = users[0].id;
-              linkedUsername = users[0].username || '';
             }
           } catch (err) {}
 
@@ -3091,6 +3141,218 @@
       });
 
       (function initFromQuery() {
+        applyDefaultsToUI(DEFAULTS_CONFIG);
+        const params = new URLSearchParams(window.location.search);
+        const qToken = params.get('token');
+        const qUnit = params.get('unitName') || params.get('companyName') || params.get('unit') || '';
+        if (qToken) {
+          setToken(qToken, { companyName: qUnit });
+        } else {
+          state.parentCompanyName = qUnit || resolveUnitName(state.jwtPayload);
+          updateUnitPills();
+          notifyParentNhanVienUrl();
+          if (state.token) {
+            inspectUnitMetadata(true);
+          }
+        }
+      })();
+
+      // ===== MODAL GÁN CHỨC DANH =====
+      const signTitleModal = {
+        officerId: null,
+        officerName: '',
+        userId: null,
+        signTitles: []
+      };
+
+      function openSignTitleModal(data = {}) {
+        signTitleModal.officerId = data.officerId || null;
+        signTitleModal.officerName = data.officerName || '';
+        signTitleModal.userId = data.userId || null;
+        signTitleModal.signTitles = data.signTitles || [];
+
+        els.signTitleOfficerName.value = signTitleModal.officerName;
+        els.signTitleUserId.value = signTitleModal.userId;
+
+        const titleListEl = document.getElementById('signTitleList');
+        if (titleListEl) {
+          titleListEl.innerHTML = '';
+        }
+
+        const countEl = document.getElementById('signTitleCount');
+        if (countEl) {
+          countEl.textContent = '0 mục';
+        }
+
+        resetSignTitleLog();
+        fetchSignTitleOptions();
+        els.modalSignTitleConfig.classList.add('open');
+      }
+
+      function closeSignTitleModal() {
+        els.modalSignTitleConfig.classList.remove('open');
+      }
+
+      function resetSignTitleLog() {
+        const logEl = document.getElementById('signTitleLog');
+        if (logEl) {
+          logEl.textContent = 'Sẵn sàng thực hiện gán chức danh...';
+        }
+      }
+
+      function renderSignTitleOptions(titles) {
+        const titleListEl = document.getElementById('signTitleList');
+        if (!titleListEl) return;
+
+        titleListEl.innerHTML = titles.map(title => {
+          const isChecked = signTitleModal.signTitles.some(t => t.id === title.id);
+          return `
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" class="sign-title-checkbox" id="signTitleCheckbox_${title.id}" value="${title.id}" ${isChecked ? 'checked' : ''}>
+              <label for="signTitleCheckbox_${title.id}" style="flex:1;cursor:pointer;">
+                <div style="font-weight:500;color:#1e293b;">${escapeHtml(title.titleName || title.titleCode)}</div>
+                <div style="font-size:12px;color:#64748b;">Mã: ${escapeHtml(title.id)} | Quyền: ${escapeHtml(title.roleId)}</div>
+              </label>
+            </div>
+          `;
+        }).join('');
+
+        const countEl = document.getElementById('signTitleCount');
+        if (countEl) {
+          countEl.textContent = `${titles.length} mục`;
+        }
+      }
+
+      async function fetchSignTitleOptions() {
+        const officerId = signTitleModal.officerId;
+        if (!officerId) {
+          showToast('Không xác định được nhân viên!', 'error');
+          return;
+        }
+
+        try {
+          const linkRes = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5&sort=id&sort=desc`);
+          const linkedUsers = linkRes.json?.data?.content || linkRes.json?.data || res.json?.content || [];
+          if (!Array.isArray(linkedUsers) || linkedUsers.length === 0) {
+            signTitleModal.userId = null;
+            els.signTitleUserId.value = '';
+            els.signTitleList.innerHTML = '<div style="text-align:center;color:var(--danger);padding:18px;">Không tìm thấy tài khoản admuser liên kết với nhân viên này.</div>';
+            showToast('Nhân viên chưa có tài khoản admuser!', 'warning');
+            return;
+          }
+
+          const linkedUserId = linkedUsers[0].id;
+          signTitleModal.userId = linkedUserId;
+          els.signTitleUserId.value = linkedUserId;
+
+          const detailRes = await apiGetJson(`/api/common/admuser/detail?id=${encodeURIComponent(linkedUserId)}`);
+          if (!detailRes.isSuccess) {
+            showToast('Lỗi tải chi tiết tài khoản: ' + detailRes.message, 'error');
+            return;
+          }
+
+          const userInfo = detailRes.json?.data || {};
+          signTitleModal.userDetail = userInfo;
+          signTitleModal.signTitles = Array.isArray(userInfo.signTitles) ? userInfo.signTitles : [];
+
+          const titlesRes = await apiGetJson('/api/common/comsigntitle/search?filter=(titleCode==%27**%27,titleName==%27**%27)&page=0&size=100&sort=id&sort=desc');
+          if (!titlesRes.isSuccess) {
+            showToast('Lỗi tải danh sách chức danh: ' + titlesRes.message, 'error');
+            return;
+          }
+
+          const allTitles = titlesRes.json?.data?.content || titlesRes.json?.data || titlesRes.json?.content || [];
+          renderSignTitleOptions(Array.isArray(allTitles) ? allTitles : []);
+
+          if (els.signTitleLog) {
+            els.signTitleLog.textContent = `Đã nạp tài khoản User ID ${linkedUserId} và ${Array.isArray(allTitles) ? allTitles.length : 0} chức danh.`;
+          }
+        } catch (err) {
+          showToast('Lỗi kết nối: ' + err.message, 'error');
+        }
+      }
+
+      async function saveSignTitles() {
+        const userId = signTitleModal.userId;
+        if (!userId) {
+          showToast('Không xác định được User ID của tài khoản!', 'warning');
+          return;
+        }
+
+        const selectedTitles = Array.from(document.querySelectorAll('.sign-title-checkbox:checked')).map(cb => {
+          const id = cb.value;
+          return { id: Number(id) };
+        });
+
+        if (selectedTitles.length === 0) {
+          showToast('Vui lòng chọn ít nhất 1 chức danh để gán!', 'warning');
+          return;
+        }
+
+        setBusy(true);
+        try {
+          const detail = signTitleModal.userDetail || {};
+          const updatePayload = {
+            ...detail,
+            id: userId,
+            signTitles: selectedTitles,
+            officer: detail.officer ? { id: detail.officer.id } : null,
+            company: detail.company ? { id: detail.company.id } : null
+          };
+
+          const res = await apiPutJson(`/api/common/admuser/capnhat?id=${encodeURIComponent(userId)}`, updatePayload);
+          if (res.isSuccess) {
+            showToast('Đã lưu chức danh thành công!', 'success');
+            logSign(`Gán chức danh thành công cho User ID: ${userId} - Chức danh: ${selectedTitles.map(t => t.id).join(', ')}`);
+            closeSignTitleModal();
+            loadOfficersList(true);
+          } else {
+            showToast('Lỗi lưu chức danh: ' + res.message, 'error');
+            logSign(`Lỗi gán chức danh: ${res.message}`, true);
+          }
+        } catch (err) {
+          showToast('Lỗi kết nối: ' + err.message, 'error');
+          logSign(`Lỗi kết nối: ${err.message}`, true);
+        } finally {
+          setBusy(false);
+        }
+      }
+
+      // ===== EVENTS CHO MODAL GÁN CHỨC DANH =====
+      els.btnCloseSignTitleModal.addEventListener('click', closeSignTitleModal);
+      els.btnCloseSignTitleModalBottom.addEventListener('click', closeSignTitleModal);
+
+      els.signTitleSearch.addEventListener('input', function() {
+        const query = this.value.trim().toLowerCase();
+        const allOptions = Array.from(document.querySelectorAll('.sign-title-checkbox'));
+        allOptions.forEach(option => {
+          const label = option.closest('div').querySelector('label div').textContent.toLowerCase();
+          const isMatch = label.includes(query);
+          option.closest('div').style.display = isMatch ? 'flex' : 'none';
+        });
+      });
+
+      // Xử lý sự kiện click cho danh sách chức danh
+      document.getElementById('signTitleList').addEventListener('click', (e) => {
+        const checkbox = e.target.closest('.sign-title-checkbox');
+        if (checkbox) {
+          const isChecked = checkbox.checked;
+          const titleId = checkbox.value;
+
+          // Cập nhật danh sách chức danh đã gán trong modal
+          if (isChecked) {
+            const newTitle = { id: Number(titleId) };
+            signTitleModal.signTitles.push(newTitle);
+          } else {
+            signTitleModal.signTitles = signTitleModal.signTitles.filter(t => t.id !== Number(titleId));
+          }
+        }
+      });
+
+      els.btnSaveSignTitles.addEventListener('click', saveSignTitles);
+
+      // ===== KHỞI TẠO TRANG =====
+      (function initPage() {
         applyDefaultsToUI(DEFAULTS_CONFIG);
         const params = new URLSearchParams(window.location.search);
         const qToken = params.get('token');
