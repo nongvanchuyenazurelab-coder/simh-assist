@@ -2737,8 +2737,12 @@
 
         if (data.userId) {
           els.inputSignUserId.value = data.userId;
+        } else if (data.fromOfficerRow) {
+          els.inputSignUserId.value = '';
         } else if (state.jwtPayload && state.jwtPayload.jti) {
           els.inputSignUserId.value = state.jwtPayload.jti;
+        } else {
+          els.inputSignUserId.value = '';
         }
 
         if (data.cccd) {
@@ -2746,7 +2750,11 @@
         }
 
         if (data.officerName) {
-          logSign(`Mở cấu hình chữ ký số cho: ${data.officerName} (User ID: ${els.inputSignUserId.value || '?'})`);
+          const accInfo = data.username ? `, TK: ${data.username}` : '';
+          logSign(`Mở cấu hình chữ ký số cho: ${data.officerName} (User ID: ${els.inputSignUserId.value || 'Chưa có TK'}${accInfo})`);
+          if (data.fromOfficerRow && !data.userId) {
+            logSign(`⚠️ Không tìm thấy tài khoản (admuser) liên kết với nhân viên "${data.officerName}". Vui lòng kiểm tra hoặc nhập User ID thủ công!`, true);
+          }
         } else {
           logSign(`Mở cấu hình chữ ký số cho User ID: ${els.inputSignUserId.value || '?'}`);
         }
@@ -3050,16 +3058,20 @@
           const cmnd = signBtn.dataset.cmnd;
 
           let linkedUserId = '';
+          let linkedUsername = '';
           try {
-            const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5`);
+            const res = await apiGetJson(`/api/common/admuser/search?filter=officer.id==${encodeURIComponent(officerId)}&page=0&size=5&sort=id&sort=desc`);
             const users = res.json?.data?.content || res.json?.data || res.json?.content || [];
             if (Array.isArray(users) && users.length > 0) {
               linkedUserId = users[0].id;
+              linkedUsername = users[0].username || '';
             }
           } catch (err) {}
 
           openSignModal({
-            userId: linkedUserId || (state.jwtPayload ? state.jwtPayload.jti : ''),
+            fromOfficerRow: true,
+            userId: linkedUserId,
+            username: linkedUsername,
             cccd: cmnd || '',
             officerName: officerName
           });
